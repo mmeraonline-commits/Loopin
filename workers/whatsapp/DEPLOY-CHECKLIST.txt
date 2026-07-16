@@ -1,0 +1,51 @@
+# Cloudflare + WhatsApp worker — post-deploy checklist
+#
+# After you have live hostnames, update each system below.
+
+## Cloudflare (Next.js / OpenNext)
+# Set secrets / vars (Workers dashboard or `wrangler secret put`):
+#   APP_URL / NEXT_PUBLIC_APP_URL = https://<your-worker>.workers.dev (or custom domain)
+#   NEXT_PUBLIC_INSFORGE_URL, NEXT_PUBLIC_INSFORGE_ANON_KEY, INSFORGE_API_KEY
+#   GEMINI_API_KEY
+#   GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET
+#   SLACK_CLIENT_ID / SLACK_CLIENT_SECRET
+#   MICROSOFT_CLIENT_ID / MICROSOFT_CLIENT_SECRET
+#   DISCORD_CLIENT_ID / DISCORD_CLIENT_SECRET / DISCORD_BOT_TOKEN
+#   LINKEDIN_CLIENT_ID / LINKEDIN_CLIENT_SECRET
+#   CALENDLY_CLIENT_ID / CALENDLY_CLIENT_SECRET
+#   TRIGGER_SECRET_KEY (tr_prod_...)
+#   NEXT_PUBLIC_VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY / VAPID_SUBJECT
+#   ADMIN_EMAILS / NEXT_PUBLIC_ADMIN_EMAILS
+#   WHATSAPP_WORKER_URL = https://<railway-or-render-host>
+#   WHATSAPP_WORKER_SECRET = <same secret as worker>
+#
+# Deploy: npm run deploy
+
+## WhatsApp worker (Railway / Render / Fly)
+# Dockerfile: workers/whatsapp/Dockerfile
+# Volume mount: /data/whatsapp-sessions
+# Env:
+#   WHATSAPP_WORKER_SECRET
+#   WHATSAPP_SESSION_DIR=/data/whatsapp-sessions
+#   INSFORGE_API_KEY
+#   NEXT_PUBLIC_INSFORGE_URL
+#   PORT=8787
+# Health: GET /
+
+## Trigger.dev
+# TRIGGER_SECRET_KEY = production key
+# APP_URL = Cloudflare APP_URL
+
+## OAuth redirect URIs (each provider console)
+# {APP_URL}/auth/gmail-callback
+# {APP_URL}/auth/slack-callback
+# {APP_URL}/auth/outlook-callback
+# {APP_URL}/auth/discord-callback
+# {APP_URL}/auth/linkedin-callback
+# {APP_URL}/auth/calendly-callback
+# (Confirm exact paths in app/auth/*)
+
+## After go-live
+# - Re-enable Calendly webhooks on the public APP_URL
+# - Re-enable Web Push on the production origin
+# - Pair WhatsApp once via Integrations (session lives on the worker volume)

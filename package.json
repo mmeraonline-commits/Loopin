@@ -1,0 +1,50 @@
+{
+  "name": "ai-personal-assistant",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "dev:trigger": "npx trigger.dev@4.4.6 dev",
+    "deploy:trigger": "npx trigger.dev@4.4.6 deploy",
+    "generate:vapid": "node scripts/generate-vapid.mjs",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "whatsapp-worker": "tsx workers/whatsapp/server.ts"
+  },
+  "dependencies": {
+    "@google/genai": "^2.8.0",
+    "@hugeicons/core-free-icons": "^4.2.0",
+    "@hugeicons/react": "^1.1.6",
+    "@insforge/sdk": "^1.3.1",
+    "@sentdm/sentdm": "^0.29.0",
+    "@trigger.dev/sdk": "4.4.6",
+    "@whiskeysockets/baileys": "^7.0.0-rc13",
+    "date-fns": "^4.4.0",
+    "lucide-react": "^1.17.0",
+    "next": "16.2.7",
+    "pino": "^10.3.1",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "@opennextjs/cloudflare": "^1.20.1",
+    "@tailwindcss/postcss": "^4",
+    "@trigger.dev/build": "4.4.6",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/web-push": "^3.6.4",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.7",
+    "tailwindcss": "^4",
+    "tsx": "^4.23.1",
+    "typescript": "^5",
+    "wrangler": "^4.111.0"
+  }
+}
