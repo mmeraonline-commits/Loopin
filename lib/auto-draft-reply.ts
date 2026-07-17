@@ -4,19 +4,32 @@ import { isAutomatedOrPromotional } from "@/lib/alert-message-filters";
 
 export type DraftTone = "direct" | "friendly" | "executive" | "professional" | "short" | "assertive";
 
+/** Per-category opt-out for native Gmail auto-draft (labeling itself is always on). */
+export type GmailAutoDraftCategoryToggles = {
+  urgent: boolean;
+  needs_reply: boolean;
+};
+
 export type AssistantSettingsSnapshot = {
   responseTone?: DraftTone | string;
   autoDraftReplies?: boolean;
   /** ISO timestamp — only Gmail received after this is labeled/drafted (set on first native sync). */
   gmailInboxSyncStartedAt?: string;
   gmailLabelIds?: Record<string, string>;
+  gmailAutoDraftCategories?: Partial<GmailAutoDraftCategoryToggles>;
 };
 
-const DEFAULT_SETTINGS: Required<AssistantSettingsSnapshot> = {
+/** Required<AssistantSettingsSnapshot> is shallow — gmailAutoDraftCategories still needs its own keys spelled out. */
+export type ResolvedAssistantSettings = Required<Omit<AssistantSettingsSnapshot, "gmailAutoDraftCategories">> & {
+  gmailAutoDraftCategories: GmailAutoDraftCategoryToggles;
+};
+
+const DEFAULT_SETTINGS: ResolvedAssistantSettings = {
   responseTone: "friendly",
   autoDraftReplies: true,
   gmailInboxSyncStartedAt: "",
   gmailLabelIds: {},
+  gmailAutoDraftCategories: { urgent: true, needs_reply: true },
 };
 
 function toneGuide(tone: string): string {
@@ -35,7 +48,7 @@ function toneGuide(tone: string): string {
   }
 }
 
-export async function loadAssistantSettings(userId: string): Promise<Required<AssistantSettingsSnapshot>> {
+export async function loadAssistantSettings(userId: string): Promise<ResolvedAssistantSettings> {
   if (!hasInsforgeAdminKey) return DEFAULT_SETTINGS;
   try {
     const { data } = await insforgeAdmin.database
@@ -53,6 +66,16 @@ export async function loadAssistantSettings(userId: string): Promise<Required<As
       gmailInboxSyncStartedAt:
         raw.gmailInboxSyncStartedAt || DEFAULT_SETTINGS.gmailInboxSyncStartedAt,
       gmailLabelIds: raw.gmailLabelIds || DEFAULT_SETTINGS.gmailLabelIds,
+      gmailAutoDraftCategories: {
+        urgent:
+          typeof raw.gmailAutoDraftCategories?.urgent === "boolean"
+            ? raw.gmailAutoDraftCategories.urgent
+            : DEFAULT_SETTINGS.gmailAutoDraftCategories.urgent,
+        needs_reply:
+          typeof raw.gmailAutoDraftCategories?.needs_reply === "boolean"
+            ? raw.gmailAutoDraftCategories.needs_reply
+            : DEFAULT_SETTINGS.gmailAutoDraftCategories.needs_reply,
+      },
     };
   } catch {
     return DEFAULT_SETTINGS;

@@ -524,6 +524,52 @@ export async function POST(req: NextRequest) {
             break;
           }
 
+          case "gmail_list_drafts": {
+            const maxResults = params?.maxResults || 10;
+            const listData = await fetchGoogleAPI(`drafts?maxResults=${maxResults}`, token);
+            const drafts = listData.drafts || [];
+
+            const detailed = await Promise.all(
+              drafts.map(async (d: { id: string; message?: { id?: string } }) => {
+                try {
+                  const draft = await fetchGoogleAPI(`drafts/${d.id}?format=full`, token);
+                  const msg = draft.message || {};
+                  const headers = msg.payload?.headers || [];
+                  const to = headerValue(headers, "To");
+                  const subject = headerValue(headers, "Subject") || "No Subject";
+                  const date = headerValue(headers, "Date") || msg.internalDate;
+                  return {
+                    id: draft.id || d.id,
+                    messageId: msg.id,
+                    threadId: msg.threadId,
+                    to,
+                    subject,
+                    snippet: msg.snippet || "",
+                    body: extractBody(msg.payload) || msg.snippet || "",
+                    date: date
+                      ? new Date(isNaN(Number(date)) ? date : Number(date)).toISOString()
+                      : undefined,
+                    gmailUrl: msg.threadId
+                      ? `https://mail.google.com/mail/u/0/#drafts/${msg.threadId}`
+                      : "https://mail.google.com/mail/u/0/#drafts",
+                  };
+                } catch {
+                  return null;
+                }
+              })
+            );
+
+            result = {
+              content: [
+                {
+                  type: "text",
+                  text: JSON.stringify({ drafts: detailed.filter(Boolean) }, null, 2),
+                },
+              ],
+            };
+            break;
+          }
+
           case "gmail_get_thread": {
             const threadId = params?.id;
             const threadData = await fetchGoogleAPI(`threads/${threadId}`, token);
@@ -734,6 +780,31 @@ export async function POST(req: NextRequest) {
                 }, null, 2)
               }
             ]
+          };
+          break;
+        }
+
+        case "gmail_list_drafts": {
+          const maxResults = params?.maxResults || 10;
+          result = {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify({
+                  drafts: simulatedDrafts.slice(0, maxResults).map((d) => ({
+                    id: d.id,
+                    messageId: d.id,
+                    threadId: d.threadId,
+                    to: d.to,
+                    subject: d.subject,
+                    snippet: d.snippet,
+                    body: d.body,
+                    date: d.date,
+                    gmailUrl: `https://mail.google.com/mail/u/0/#drafts/${d.threadId}`,
+                  })),
+                }, null, 2),
+              },
+            ],
           };
           break;
         }

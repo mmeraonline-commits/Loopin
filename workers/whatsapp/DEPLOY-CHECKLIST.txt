@@ -2,7 +2,20 @@
 #
 # After you have live hostnames, update each system below.
 
-## Cloudflare (Next.js / OpenNext)
+## Cloudflare (Next.js / OpenNext Workers — NOT Pages / next-on-pages)
+#
+# Do NOT use Cloudflare Pages with build command:
+#   npx @cloudflare/next-on-pages@1   ← wrong for this repo
+#
+# Use Cloudflare Workers connected to the GitHub repo (or deploy locally):
+#   Build command:  npx opennextjs-cloudflare build
+#   (or)            npm run cf:build
+#   Deploy command: npx opennextjs-cloudflare deploy
+#   (or)            npm run deploy
+#
+# Config file: wrangler.jsonc (Worker name: omnisync)
+# Output: .open-next/worker.js + .open-next/assets
+#
 # Set secrets / vars (Workers dashboard or `wrangler secret put`):
 #   APP_URL / NEXT_PUBLIC_APP_URL = https://<your-worker>.workers.dev (or custom domain)
 #   NEXT_PUBLIC_INSFORGE_URL, NEXT_PUBLIC_INSFORGE_ANON_KEY, INSFORGE_API_KEY
@@ -19,7 +32,7 @@
 #   WHATSAPP_WORKER_URL = https://<railway-or-render-host>
 #   WHATSAPP_WORKER_SECRET = <same secret as worker>
 #
-# Deploy: npm run deploy
+# Local deploy: npm run deploy
 
 ## WhatsApp worker (Railway / Render / Fly)
 # Dockerfile: workers/whatsapp/Dockerfile
@@ -30,7 +43,7 @@
 #   INSFORGE_API_KEY
 #   NEXT_PUBLIC_INSFORGE_URL
 #   PORT=8787
-# Health: GET /
+# Health: GET /health
 
 ## Trigger.dev
 # TRIGGER_SECRET_KEY = production key

@@ -1,0 +1,9 @@
+# Railway service config for WhatsApp Baileys worker
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "workers/whatsapp/Dockerfile"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"

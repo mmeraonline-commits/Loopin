@@ -49,6 +49,14 @@ next-env.d.ts
 
 # WhatsApp session data
 .whatsapp-sessions/
+whatsapp-worker-secret.txt
+railway-deploy-log.txt
+railway-deploy-status.json
+railway-build-logs.txt
+railway-runtime-logs.txt
+build-verify.txt
+build-log.txt
+
 
 
 .trigger

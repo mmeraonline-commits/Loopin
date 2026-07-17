@@ -1,9 +1,11 @@
 export function getAppUrl() {
-  return (
-    process.env.NEXT_PUBLIC_APP_URL ||
+  // Prefer APP_URL (runtime Worker secret) over NEXT_PUBLIC_APP_URL (often baked at build
+  // from .env.local as localhost, which breaks production OAuth redirect_uri).
+  const raw =
     process.env.APP_URL ||
-    "http://localhost:3000"
-  ).replace(/\/$/, "");
+    process.env.NEXT_PUBLIC_APP_URL ||
+    "http://localhost:3000";
+  return raw.replace(/\/$/, "");
 }
 
 export async function updateUserIntegration(

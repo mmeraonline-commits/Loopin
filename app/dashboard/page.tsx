@@ -91,6 +91,7 @@ import {
   canUseSurface,
   channelLabel,
   getPlan,
+  planRank,
   type ChannelId,
 } from "@/lib/plans";
 
@@ -225,6 +226,8 @@ function DashboardOverviewPanel({ user }: { user: any }) {
   const [refreshing, setRefreshing] = useState(false);
   const [confirmQueue, setConfirmQueue] = useState<any[]>([]);
   const [confirmLoading, setConfirmLoading] = useState(true);
+  const [gmailDrafts, setGmailDrafts] = useState<any[]>([]);
+  const [gmailDraftsLoading, setGmailDraftsLoading] = useState(true);
 
   const fetchBriefData = async (isRefresh = false) => {
     if (isRefresh) {
@@ -278,6 +281,25 @@ function DashboardOverviewPanel({ user }: { user: any }) {
     }
   };
 
+  const fetchGmailDrafts = async () => {
+    if (!user?.id) {
+      setGmailDraftsLoading(false);
+      return;
+    }
+    setGmailDraftsLoading(true);
+    try {
+      const res = await fetch(`/api/gmail-triage/drafts?userId=${encodeURIComponent(user.id)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setGmailDrafts(Array.isArray(data.drafts) ? data.drafts : []);
+      }
+    } catch (err) {
+      console.error("Error loading Gmail drafts:", err);
+    } finally {
+      setGmailDraftsLoading(false);
+    }
+  };
+
   // Sync state if user.dashboard_brief changes (e.g. from authentication fetch)
   useEffect(() => {
     if (user?.dashboard_brief) {
@@ -290,12 +312,14 @@ function DashboardOverviewPanel({ user }: { user: any }) {
     if (user?.id) {
       fetchBriefData();
       fetchConfirmQueue();
+      fetchGmailDrafts();
     }
   }, [user?.id]);
 
   const handleRefresh = () => {
     fetchBriefData(true);
     fetchConfirmQueue();
+    fetchGmailDrafts();
   };
 
   const handleNavigateToIntegrations = () => {
@@ -741,6 +765,84 @@ function DashboardOverviewPanel({ user }: { user: any }) {
           </div>
         </div>
       </div>
+
+      {/* Gmail native drafts — Loopin auto-drafts waiting in the user's Gmail Drafts folder */}
+      <div className="glass-premium p-6 rounded-3xl border border-black/[0.05] dark:border-white/5 shadow-sm mt-6">
+        <div className="flex items-center justify-between border-b border-black/[0.05] dark:border-white/5 pb-4 mb-4">
+          <div className="flex items-start space-x-2.5">
+            <Mail className="w-5 h-5 text-rose-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <h3 className="text-[13px] font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
+                Gmail drafts ready
+              </h3>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 font-medium">
+                {gmailDraftsLoading
+                  ? "Loading…"
+                  : gmailDrafts.length > 0
+                    ? `${gmailDrafts.length} draft${gmailDrafts.length === 1 ? "" : "s"} waiting in Gmail — review, edit, then send`
+                    : "No Gmail drafts waiting"}
+              </p>
+            </div>
+          </div>
+          <a
+            href="https://mail.google.com/mail/u/0/#drafts"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] font-bold text-slate-500 dark:text-slate-400 px-3 py-1.5 rounded-xl bg-black/[0.03] dark:bg-white/5 border border-black/[0.05] dark:border-white/5 hover:bg-black/[0.05] dark:hover:bg-white/10 transition flex-shrink-0 inline-flex items-center gap-1.5"
+          >
+            Open Gmail
+            <ExternalLink className="w-3 h-3" />
+          </a>
+        </div>
+
+        {gmailDraftsLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 animate-pulse">
+            <div className="h-20 bg-black/5 dark:bg-white/5 rounded-2xl" />
+            <div className="h-20 bg-black/5 dark:bg-white/5 rounded-2xl" />
+          </div>
+        ) : gmailDrafts.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {gmailDrafts.slice(0, 6).map((draft: any) => (
+              <a
+                key={draft.id}
+                href={draft.gmailUrl || "https://mail.google.com/mail/u/0/#drafts"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-start gap-3 p-3.5 rounded-2xl border border-black/[0.05] dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] transition group"
+              >
+                <div className="w-9 h-9 rounded-xl bg-white dark:bg-white/[0.05] border border-black/[0.05] dark:border-white/10 flex items-center justify-center p-1.5 flex-shrink-0">
+                  <img src="/001-gmail.png" alt="Gmail" className="w-full h-full object-contain" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate group-hover:text-rose-500 transition-colors">
+                      {draft.subject || "Draft reply"}
+                    </h4>
+                    <span className="text-[10px] font-semibold text-rose-500 flex-shrink-0">Review</span>
+                  </div>
+                  {draft.to && (
+                    <p className="text-[10px] text-slate-500 mt-0.5 truncate">To: {draft.to}</p>
+                  )}
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                    {draft.snippet || draft.body || "Open in Gmail to review this draft."}
+                  </p>
+                </div>
+              </a>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-3">
+              <CheckCircle className="w-5 h-5 text-emerald-500" />
+            </div>
+            <p className="text-xs font-bold text-slate-700 dark:text-slate-200">No drafts waiting</p>
+            <p className="text-[10px] text-slate-500 mt-1 max-w-[280px]">
+              When Loopin auto-drafts a reply for Urgent or Needs Reply mail, it shows up here so you can open Gmail and send it.
+            </p>
+          </div>
+        )}
+      </div>
+
       {/* Bottom Chat / Ask Bar */}
       <div className="relative w-full rounded-3xl border border-black/[0.05] dark:border-white/5 bg-white/60 dark:bg-[#0f172a]/40 backdrop-blur-md focus-within:border-purple-500/30 focus-within:shadow-md transition-all duration-300 p-3.5 flex items-center justify-between shadow-sm group mt-8">
         <div className="flex items-center space-x-3 flex-1">
@@ -2640,17 +2742,23 @@ function IntegrationsPanel() {
             await refreshUser();
           }
         } else {
-          // Check if Client ID is configured in .env
+          // Prefer server authUrl; fall back to clientId + current origin (covers stale Worker builds).
           const res = await fetch("/api/gmail-connect");
           const data = await res.json();
+          const gmailScopes = "https://www.googleapis.com/auth/gmail.modify";
+          let authUrl = typeof data.authUrl === "string" ? data.authUrl : "";
+          if (
+            !authUrl &&
+            data.clientId &&
+            data.clientId !== "your_google_client_id_here"
+          ) {
+            const redirectUri = `${window.location.origin}/auth/gmail-callback`;
+            authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(data.clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(gmailScopes)}&access_type=offline&prompt=consent`;
+          }
 
-          if (data.clientId && data.clientId !== "your_google_client_id_here") {
-            // Redirect to Google OAuth Consent flow!
-            const redirectUri = encodeURIComponent("http://localhost:3000/auth/gmail-callback");
-            const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${data.clientId}&redirect_uri=${redirectUri}&response_type=code&scope=https://www.googleapis.com/auth/gmail.modify&access_type=offline&prompt=consent`;
-            window.location.assign(googleAuthUrl);
+          if (authUrl) {
+            window.location.assign(authUrl);
           } else {
-            // Client credentials missing in .env. Open warning modal.
             setShowGmailSetupErrorModal(true);
           }
         }
@@ -4566,6 +4674,9 @@ type AssistantSettings = {
   detailLevel: "minimal" | "standard" | "detailed";
   responseTone: "direct" | "friendly" | "executive";
   autoDraftReplies: boolean;
+  /** Native Gmail draft (drafts.create) per category — labeling itself is always on. Pro plan and above only. */
+  gmailAutoDraftUrgent: boolean;
+  gmailAutoDraftNeedsReply: boolean;
   proactiveSuggestions: boolean;
   briefingCadence: "morning" | "twice_daily" | "manual";
   briefingChannels: string[];
@@ -4602,6 +4713,8 @@ function getDefaultAssistantSettings(user?: SettingsUser | null): AssistantSetti
     detailLevel: "standard",
     responseTone: "friendly",
     autoDraftReplies: true,
+    gmailAutoDraftUrgent: true,
+    gmailAutoDraftNeedsReply: true,
     proactiveSuggestions: true,
     briefingCadence: "morning",
     briefingChannels: ["in_app", "email"],
@@ -4772,6 +4885,14 @@ function SettingsPanel() {
             typeof data.settings.autoDraftReplies === "boolean"
               ? data.settings.autoDraftReplies
               : current.autoDraftReplies,
+          gmailAutoDraftUrgent:
+            typeof data.settings.gmailAutoDraftCategories?.urgent === "boolean"
+              ? data.settings.gmailAutoDraftCategories.urgent
+              : current.gmailAutoDraftUrgent,
+          gmailAutoDraftNeedsReply:
+            typeof data.settings.gmailAutoDraftCategories?.needs_reply === "boolean"
+              ? data.settings.gmailAutoDraftCategories.needs_reply
+              : current.gmailAutoDraftNeedsReply,
         }));
       })
       .catch(() => {});
@@ -4793,6 +4914,10 @@ function SettingsPanel() {
           settings: {
             responseTone: settings.responseTone,
             autoDraftReplies: settings.autoDraftReplies,
+            gmailAutoDraftCategories: {
+              urgent: settings.gmailAutoDraftUrgent,
+              needs_reply: settings.gmailAutoDraftNeedsReply,
+            },
           },
         }),
       }).catch(() => {});
@@ -4808,6 +4933,9 @@ function SettingsPanel() {
     setSaveState("saved");
     window.setTimeout(() => setSaveState("idle"), 2500);
   };
+
+  // Labeling is always on for every plan; native Gmail draft replies require Pro or higher.
+  const canAutoDraftGmail = planRank(getPlan(user?.plan).id) >= planRank("pro");
 
   const connectedPlatforms = [
     { id: "gmail", name: "Gmail", logo: "/001-gmail.png", connected: !!user?.integrations?.gmail?.connected },
@@ -4991,6 +5119,35 @@ function SettingsPanel() {
               label="Auto-prepare reply drafts"
               hint="When a message needs a reply, OmniSync prepares a draft in Inbox → Needs reply. Nothing sends until you confirm."
             />
+            <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.03] p-3 space-y-3">
+              <FieldLabel
+                label="Gmail auto-draft by category"
+                hint={
+                  canAutoDraftGmail
+                    ? "Loopin always labels new Gmail (Urgent / Needs reply / Notifications / Promotional). Choose which of those also get a draft reply saved directly in your Gmail Drafts folder for you to review, edit, and send."
+                    : "Gmail labeling is included on every plan. Native Gmail draft replies require the Pro plan or higher."
+                }
+              />
+              {!canAutoDraftGmail && (
+                <p className="text-[11px] font-bold text-violet-500">
+                  Upgrade to Pro to unlock native Gmail draft replies.
+                </p>
+              )}
+              <div className={canAutoDraftGmail ? "space-y-3" : "space-y-3 opacity-50 pointer-events-none"}>
+                <ToggleSetting
+                  checked={settings.gmailAutoDraftUrgent}
+                  onChange={value => updateSetting("gmailAutoDraftUrgent", value)}
+                  label="Auto-draft for Urgent"
+                  hint="Save a Gmail draft reply on threads Loopin labels Urgent."
+                />
+                <ToggleSetting
+                  checked={settings.gmailAutoDraftNeedsReply}
+                  onChange={value => updateSetting("gmailAutoDraftNeedsReply", value)}
+                  label="Auto-draft for Needs Reply"
+                  hint="Save a Gmail draft reply on threads Loopin labels Needs Reply."
+                />
+              </div>
+            </div>
             <ToggleSetting
               checked={settings.proactiveSuggestions}
               onChange={value => updateSetting("proactiveSuggestions", value)}

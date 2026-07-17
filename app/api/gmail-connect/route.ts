@@ -1,10 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hasInsforgeAdminKey, insforgeAdmin } from "@/lib/insforge-admin";
+import { getAppUrl } from "@/lib/integrations";
 import { isNextResponse, requireChannelAccess } from "@/lib/plan-gate";
 
+const GMAIL_SCOPES = "https://www.googleapis.com/auth/gmail.modify";
+
 export async function GET() {
+  const clientId = process.env.GOOGLE_CLIENT_ID || "";
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET || "";
+  const redirectUri = `${getAppUrl()}/auth/gmail-callback`;
+  const authUrl =
+    clientId && clientId !== "your_google_client_id_here"
+      ? `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(GMAIL_SCOPES)}&access_type=offline&prompt=consent`
+      : "";
+
   return NextResponse.json({
-    clientId: process.env.GOOGLE_CLIENT_ID || ""
+    clientId,
+    authUrl,
+    redirectUri,
+    configured: Boolean(authUrl && clientSecret && clientSecret !== "your_google_client_secret_here"),
   });
 }
 
@@ -39,6 +53,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const redirectUri = `${getAppUrl()}/auth/gmail-callback`;
+
     // Exchange code for tokens
     const response = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
@@ -47,7 +63,7 @@ export async function POST(req: NextRequest) {
         code,
         client_id: clientId,
         client_secret: clientSecret,
-        redirect_uri: "http://localhost:3000/auth/gmail-callback",
+        redirect_uri: redirectUri,
         grant_type: "authorization_code"
       })
     });

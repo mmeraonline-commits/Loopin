@@ -600,8 +600,8 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => {
-  console.log(`[whatsapp-worker] listening on :${PORT}`);
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`[whatsapp-worker] listening on 0.0.0.0:${PORT}`);
   if (!SECRET) {
     console.warn("[whatsapp-worker] WHATSAPP_WORKER_SECRET is not set");
   }

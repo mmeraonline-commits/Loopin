@@ -15,6 +15,7 @@ const CALENDLY_SCOPES = [
 
 export async function GET() {
   const clientId = process.env.CALENDLY_CLIENT_ID || "";
+  const clientSecret = process.env.CALENDLY_CLIENT_SECRET || "";
   const redirectUri = `${getAppUrl()}/auth/calendly-callback`;
   const authUrl = clientId
     ? `https://auth.calendly.com/oauth/authorize?client_id=${encodeURIComponent(clientId)}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(CALENDLY_SCOPES)}`
@@ -23,7 +24,8 @@ export async function GET() {
   return NextResponse.json({
     clientId,
     authUrl,
-    configured: Boolean(clientId && process.env.CALENDLY_CLIENT_SECRET),
+    redirectUri,
+    configured: Boolean(clientId && clientSecret),
   });
 }
 

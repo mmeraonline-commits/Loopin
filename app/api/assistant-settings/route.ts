@@ -43,15 +43,49 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Server key missing" }, { status: 503 });
     }
 
+    // Merge onto the existing jsonb column instead of replacing it — this column
+    // also holds server-managed fields (gmailInboxSyncStartedAt, gmailLabelIds)
+    // that must survive a Settings page save.
+    const { data: existingRow, error: fetchError } = await insforgeAdmin.database
+      .from("users")
+      .select("assistant_settings")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (fetchError) return NextResponse.json({ error: fetchError.message }, { status: 500 });
+
+    const current = (existingRow?.assistant_settings || {}) as Record<string, unknown>;
+    const currentCategories = (current.gmailAutoDraftCategories || {}) as Record<string, boolean>;
+    const incomingCategories = settings.gmailAutoDraftCategories;
+
     const patch = {
-      responseTone: settings.responseTone || "friendly",
+      ...current,
+      responseTone: settings.responseTone || current.responseTone || "friendly",
       autoDraftReplies:
-        typeof settings.autoDraftReplies === "boolean" ? settings.autoDraftReplies : true,
+        typeof settings.autoDraftReplies === "boolean"
+          ? settings.autoDraftReplies
+          : typeof current.autoDraftReplies === "boolean"
+            ? current.autoDraftReplies
+            : true,
+      ...(incomingCategories && typeof incomingCategories === "object"
+        ? {
+            gmailAutoDraftCategories: {
+              urgent:
+                typeof incomingCategories.urgent === "boolean"
+                  ? incomingCategories.urgent
+                  : currentCategories.urgent ?? true,
+              needs_reply:
+                typeof incomingCategories.needs_reply === "boolean"
+                  ? incomingCategories.needs_reply
+                  : currentCategories.needs_reply ?? true,
+            },
+          }
+        : {}),
     };
 
     const { data, error } = await insforgeAdmin.database
       .from("users")
-      .update({ assistant_settings: patch })
+      .update({ assistant_settings: patch, updated_at: new Date().toISOString() })
       .eq("id", userId)
       .select("assistant_settings")
       .maybeSingle();

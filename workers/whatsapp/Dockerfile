@@ -12,6 +12,9 @@ RUN apt-get update \
 COPY package.json package-lock.json* ./
 RUN npm ci
 
+COPY scripts/patch-esm-exports.cjs ./scripts/patch-esm-exports.cjs
+RUN node scripts/patch-esm-exports.cjs
+
 COPY tsconfig.json ./
 COPY lib ./lib
 COPY workers/whatsapp ./workers/whatsapp
