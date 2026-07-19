@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { format } from "date-fns";
 import { hasInsforgeAdminKey, insforgeAdmin } from "@/lib/insforge-admin";
 import { GoogleGenAI } from "@google/genai";
+import { loadUserPreferences } from "@/lib/briefing-delivery";
+import { detailLevelGuide } from "@/lib/assistant-preferences";
 
 const MOCK_BRIEF_DATA = {
   stats: {
@@ -208,9 +210,14 @@ export async function POST(req: NextRequest) {
     if (hasApiKey && hasData) {
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const prefs = await loadUserPreferences(userId);
         const systemPrompt = `You are an advanced AI personal assistant named Loopin.
 Analyze the following recent email and chat communications.
 Generate a structured intelligence briefing for the user's dashboard today.
+User: ${prefs.displayName || "User"}
+Context: ${prefs.roleContext}
+Timezone: ${prefs.timezone}
+${detailLevelGuide(prefs.detailLevel)}
 The current local time is: ${new Date().toISOString()} (${format(new Date(), "EEEE")}).
 
 Connected communications data:

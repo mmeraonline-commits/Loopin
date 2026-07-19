@@ -149,6 +149,10 @@ export async function POST(req: NextRequest) {
         fullDetails: item.body,
         sourceApp: item.app,
         tone: assistant.responseTone,
+        toneInstructions: assistant.toneInstructions,
+        toneSignOff: assistant.toneSignOff,
+        toneSamples: assistant.toneSamples,
+        toneKnowledgeSummary: assistant.toneKnowledgeSummary,
         replyContext: body?.replyContext,
       });
       if (!draft) continue;

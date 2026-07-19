@@ -1,5 +1,6 @@
 import { hasInsforgeAdminKey, insforgeAdmin } from "@/lib/insforge-admin";
 import { sendPushToUser } from "@/lib/push";
+import { escapeHtml, sendEmailToUser } from "@/lib/email";
 import {
   callWhatsAppWorker,
   isWhatsAppWorkerConfigured,
@@ -19,30 +20,70 @@ type WhatsAppIntegration = {
   phoneNumber?: string;
 };
 
+function normalizeMethods(method: string | string[] | undefined): string[] {
+  if (Array.isArray(method)) {
+    return [...new Set(method.map((m) => String(m || "").toLowerCase().trim()).filter(Boolean))];
+  }
+  const single = String(method || "in_app").toLowerCase().trim();
+  return single ? [single] : ["in_app"];
+}
+
 /**
- * Deliver an alert via the user's preferred channel(s).
+ * Deliver an alert via one or more channels (in_app / push / whatsapp / email).
  * Always safe to call — failures are logged and do not throw.
+ * `in_app` is a no-op here (caller already inserted the alert row).
  */
 export async function notifyUserOfAlert(
   userId: string,
-  method: string | undefined,
+  method: string | string[] | undefined,
   payload: AlertNotifyPayload
 ) {
-  const channel = (method || "in_app").toLowerCase();
-  const results: Record<string, unknown> = { channel };
+  const channels = normalizeMethods(method);
+  const results: Record<string, unknown> = { channels };
 
-  try {
-    if (channel === "push" || channel === "email") {
-      // Email provider not wired yet — push is the best available extra channel.
-      results.push = await sendPushToUser(userId, payload);
-    }
+  for (const channel of channels) {
+    try {
+      if (channel === "in_app") {
+        results.in_app = { ok: true };
+        continue;
+      }
 
-    if (channel === "whatsapp") {
-      results.whatsapp = await sendWhatsAppAlertToUser(userId, payload);
+      if (channel === "push") {
+        results.push = await sendPushToUser(userId, payload);
+        continue;
+      }
+
+      if (channel === "whatsapp") {
+        results.whatsapp = await sendWhatsAppAlertToUser(userId, payload);
+        continue;
+      }
+
+      if (channel === "email") {
+        const appUrl =
+          process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+        const absoluteUrl = payload.url
+          ? payload.url.startsWith("http")
+            ? payload.url
+            : `${appUrl}${payload.url}`
+          : `${appUrl}/dashboard?tab=alerts`;
+        results.email = await sendEmailToUser(userId, {
+          subject: `Loopin Alert: ${payload.title}`,
+          html: `<div style="font-family:system-ui,sans-serif;line-height:1.5">
+  <h2 style="margin:0 0 8px">${escapeHtml(payload.title)}</h2>
+  <p style="margin:0 0 16px;color:#334155">${escapeHtml(payload.body)}</p>
+  <p><a href="${escapeHtml(absoluteUrl)}" style="color:#7c3aed;font-weight:600">Open in Loopin</a></p>
+</div>`,
+          text: `${payload.title}\n\n${payload.body}\n\nOpen: ${absoluteUrl}`,
+        });
+        continue;
+      }
+    } catch (err) {
+      console.error(`[alert-notify] ${channel} failed:`, err);
+      results[channel] = {
+        ok: false,
+        error: err instanceof Error ? err.message : "notify failed",
+      };
     }
-  } catch (err) {
-    console.error("[alert-notify] Failed:", err);
-    results.error = err instanceof Error ? err.message : "notify failed";
   }
 
   return results;

@@ -138,9 +138,11 @@ async function fetchNewUnprocessedMessages(
   syncStartedAt: string
 ): Promise<GmailListMessage[]> {
   const after = formatGmailAfterDate(syncStartedAt);
+  // Do NOT require is:unread — opening the email in Gmail would otherwise
+  // permanently skip labeling/drafting. Loopin/Processed is the idempotency marker.
   const q = after
-    ? `label:inbox is:unread -label:${LOOPIN_LABEL_NAMES.processed} after:${after} newer_than:3d`
-    : `label:inbox is:unread -label:${LOOPIN_LABEL_NAMES.processed} newer_than:1d`;
+    ? `label:inbox -label:${LOOPIN_LABEL_NAMES.processed} after:${after} newer_than:3d`
+    : `label:inbox -label:${LOOPIN_LABEL_NAMES.processed} newer_than:1d`;
 
   const list = await callGmailMcp(userId, "gmail_list_messages", {
     q,
@@ -414,6 +416,10 @@ export async function runGmailAutoTriage(userId: string): Promise<GmailAutoTriag
               fullDetails: msg.body || msg.snippet || "",
               sourceApp: "gmail",
               tone: draftSettings.responseTone,
+              toneInstructions: draftSettings.toneInstructions,
+              toneSignOff: draftSettings.toneSignOff,
+              toneSamples: draftSettings.toneSamples,
+              toneKnowledgeSummary: draftSettings.toneKnowledgeSummary,
             });
 
             if (draftBody) {

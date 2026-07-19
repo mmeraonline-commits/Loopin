@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
+import { loadAssistantSettings } from "@/lib/auto-draft-reply";
+import { buildTonePrompt } from "@/lib/tone-profile";
+import { loadUserPreferences } from "@/lib/briefing-delivery";
+import { detailLevelGuide } from "@/lib/assistant-preferences";
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Internal Server Error";
@@ -9,7 +13,7 @@ type AiFeature = "summary" | "next_action" | "reply" | "suggestions";
 
 export async function POST(req: NextRequest) {
   try {
-    const { feature, app, title, preview, body, replyContext, tone } = await req.json();
+    const { feature, app, title, preview, body, replyContext, tone, userId } = await req.json();
 
     if (!feature || !app) {
       return NextResponse.json(
@@ -26,6 +30,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const prefs = userId ? await loadUserPreferences(userId) : null;
+    if (feature === "suggestions" && prefs && !prefs.proactiveSuggestions) {
+      return NextResponse.json({
+        result: { replies: [], nextAction: "", priority: "medium", reason: "Proactive suggestions disabled in Settings." },
+        disabled: true,
+      });
+    }
+
     const ai = new GoogleGenAI({ apiKey: geminiApiKey });
     const isEmail = app === "gmail" || app === "outlook";
     const contextBlock = `Platform: ${app}
@@ -33,22 +45,28 @@ Title: ${title || "Untitled"}
 Preview: ${preview || ""}
 Full message:
 ${body || preview || "No content"}`;
+    const detailGuide = detailLevelGuide(prefs?.detailLevel);
+    const profileLine = [
+      prefs?.displayName ? `User: ${prefs.displayName}` : "",
+      prefs?.roleContext ? `Context: ${prefs.roleContext}` : "",
+    ]
+      .filter(Boolean)
+      .join(". ");
 
     let prompt = "";
 
     if (feature === "summary") {
       prompt = `You are Loopin, an advanced AI personal assistant. Summarize this inbox item.
-
+${profileLine ? `\n${profileLine}\n` : ""}
 ${contextBlock}
 
 Instructions:
-- Provide 2-3 short bullet points with the critical information.
+- ${detailGuide}
 - Focus on what the user needs to know or do.
-- Keep under 60 words total.
 - Plain bullets only, no markdown titles.`;
     } else if (feature === "next_action") {
       prompt = `You are Loopin, an advanced AI personal assistant. Suggest the single best next action for this inbox item.
-
+${profileLine ? `\n${profileLine}\n` : ""}
 ${contextBlock}
 
 Instructions:
@@ -56,21 +74,21 @@ Instructions:
 - Keep under 25 words.
 - Be practical.`;
     } else if (feature === "reply") {
-      const toneGuide =
-        tone === "friendly"
-          ? "Warm and friendly."
-          : tone === "short"
-            ? "Extremely concise (1-2 sentences)."
-            : tone === "assertive"
-              ? "Confident and direct, still polite."
-              : "Professional and polished.";
+      const savedTone = userId ? await loadAssistantSettings(userId) : null;
+      const toneBlock = buildTonePrompt({
+        responseTone: tone || savedTone?.responseTone,
+        toneInstructions: savedTone?.toneInstructions,
+        toneSignOff: savedTone?.toneSignOff,
+        toneSamples: savedTone?.toneSamples,
+        toneKnowledgeSummary: savedTone?.toneKnowledgeSummary,
+      });
 
       prompt = isEmail
         ? `You are Loopin, an AI personal assistant. Draft an email reply.
-
+${profileLine ? `\n${profileLine}\n` : ""}
 ${contextBlock}
 ${replyContext ? `User instruction: ${replyContext}` : ""}
-Tone: ${toneGuide}
+${toneBlock}
 
 Instructions:
 - Write only the email body.
@@ -78,10 +96,10 @@ Instructions:
 - Address the sender's points.
 - No subject line or headers.`
         : `You are Loopin, an AI personal assistant. Draft a chat reply.
-
+${profileLine ? `\n${profileLine}\n` : ""}
 ${contextBlock}
 ${replyContext ? `User instruction: ${replyContext}` : ""}
-Tone: ${toneGuide}
+${toneBlock}
 
 Instructions:
 - Write a natural message reply only.

@@ -12,6 +12,19 @@ type AlertRule = {
   frequency?: string;
 };
 
+type IntegrationValue = { connected?: boolean; isSimulated?: boolean } | null | undefined;
+
+type UserRow = {
+  id: string;
+  integrations?: Record<string, IntegrationValue> | null;
+};
+
+const MONITORABLE_APPS = ["gmail", "whatsapp", "slack", "discord"] as const;
+
+function getDb() {
+  return hasInsforgeAdminKey ? insforgeAdmin.database : insforge.database;
+}
+
 function getNextCheckAt(frequency?: string): string {
   const next = new Date();
   if (frequency === "hourly") next.setHours(next.getHours() + 1);
@@ -21,12 +34,27 @@ function getNextCheckAt(frequency?: string): string {
   return next.toISOString();
 }
 
+function hasConnectedMonitorableApp(user: UserRow): boolean {
+  const integrations = user.integrations;
+  if (!integrations || typeof integrations !== "object") return false;
+  for (const app of MONITORABLE_APPS) {
+    const value = integrations[app];
+    if (value && typeof value === "object" && value.connected === true && value.isSimulated !== true) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Every 5 minutes: only user-defined alert rules (higher priority).
+ */
 export const alertsCron = schedules.task({
   id: "alerts-cron",
   cron: "*/5 * * * *",
   run: async () => {
     const now = new Date().toISOString();
-    const db = hasInsforgeAdminKey ? insforgeAdmin.database : insforge.database;
+    const db = getDb();
     const { data: rules, error } = await db
       .from("alert_rules")
       .select("*")
@@ -46,18 +74,38 @@ export const alertsCron = schedules.task({
         .eq("id", rule.id);
     }
 
-    const { data: users, error: usersError } = await db
-      .from("users")
-      .select("id, integrations");
+    return { ok: true, rulesTriggered: (rules || []).length };
+  },
+});
 
-    if (usersError) {
-      console.error("[alerts-cron] Users fetch error:", usersError);
-      return;
+/**
+ * Every 30 minutes: AI auto-alerts for users with connected apps.
+ * Cheaper than fanning out every 5 min to every user row.
+ */
+export const alertsAutoGenerateCron = schedules.task({
+  id: "alerts-auto-generate-cron",
+  cron: "*/30 * * * *",
+  run: async () => {
+    const db = getDb();
+    const { data: users, error } = await db.from("users").select("id, integrations");
+
+    if (error) {
+      console.error("[alerts-auto-generate-cron] Users fetch error:", error);
+      return { ok: false, error: error.message || String(error) };
     }
 
-    for (const user of (users || []) as { id: string }[]) {
+    const rows = (users || []) as UserRow[];
+    const targets = rows.filter(hasConnectedMonitorableApp);
+
+    console.log(
+      `[alerts-auto-generate-cron] users=${rows.length} withApps=${targets.length}`
+    );
+
+    for (const user of targets) {
       await autoGenerateAlertsForUserTask.trigger({ userId: user.id });
     }
+
+    return { ok: true, usersScanned: rows.length, triggered: targets.length };
   },
 });
 

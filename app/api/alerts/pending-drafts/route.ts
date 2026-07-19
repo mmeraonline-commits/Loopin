@@ -112,6 +112,10 @@ export async function POST(req: NextRequest) {
         fullDetails: alert.full_details,
         sourceApp: alert.source_app || "gmail",
         tone: settings.responseTone,
+        toneInstructions: settings.toneInstructions,
+        toneSignOff: settings.toneSignOff,
+        toneSamples: settings.toneSamples,
+        toneKnowledgeSummary: settings.toneKnowledgeSummary,
       });
       if (!draft) {
         return NextResponse.json({ error: "Failed to generate draft" }, { status: 500 });

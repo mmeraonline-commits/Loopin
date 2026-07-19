@@ -3,6 +3,8 @@ import { hasInsforgeAdminKey, insforgeAdmin } from "@/lib/insforge-admin";
 import { GoogleGenAI } from "@google/genai";
 import { format } from "date-fns";
 import { trackFeatureUsage } from "@/lib/track-feature-usage";
+import { loadUserPreferences, deliverBriefingToChannels } from "@/lib/briefing-delivery";
+import { detailLevelGuide } from "@/lib/assistant-preferences";
 
 export async function GET(req: NextRequest) {
   try {
@@ -49,6 +51,31 @@ export async function POST(req: NextRequest) {
     if (!userId) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     }
+
+    const prefs = await loadUserPreferences(userId);
+    const nowLabel = (() => {
+      try {
+        return new Intl.DateTimeFormat("en-US", {
+          timeZone: prefs.timezone || "UTC",
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        }).format(new Date());
+      } catch {
+        return `${format(new Date(), "EEEE, MMMM d, yyyy")} ${format(new Date(), "h:mm a")}`;
+      }
+    })();
+    const profileBlock = [
+      prefs.displayName ? `User name: ${prefs.displayName}` : "",
+      prefs.roleContext ? `User context: ${prefs.roleContext}` : "",
+      `Timezone: ${prefs.timezone}`,
+      detailLevelGuide(prefs.detailLevel),
+    ]
+      .filter(Boolean)
+      .join("\n");
 
     if (!hasInsforgeAdminKey) {
       return NextResponse.json(
@@ -211,10 +238,11 @@ export async function POST(req: NextRequest) {
 
         const prompt = `You are Loopin, an AI personal assistant. Analyze the following real communications fetched from the user's connected apps and produce a structured intelligence briefing.
 
+${profileBlock}
+
 Briefing: "${scheduleName}"
 Goal: ${scheduleDesc}
-Date: ${format(new Date(), "EEEE, MMMM d, yyyy")}
-Time: ${format(new Date(), "h:mm a")}
+Date/Time (${prefs.timezone}): ${nowLabel}
 Connected apps with data: ${connectedAppsUsed.join(", ")}
 Categories to include: ${categories.join(", ")}
 
@@ -255,6 +283,7 @@ RULES:
 - Extract tasks from any message containing action items, deadlines or requests
 - Extract follow-ups from conversations that need a response or follow-through
 - Only populate categories that were requested: ${categories.join(", ")}
+- ${detailLevelGuide(prefs.detailLevel)}
 - Return valid JSON only`;
 
         const response = await ai.models.generateContent({
@@ -282,6 +311,15 @@ RULES:
           if (error) return NextResponse.json({ error: error.message }, { status: 500 });
           console.log(`[Briefings] AI briefing generated and saved: ${parsed.title}`);
           void trackFeatureUsage({ userId, feature: "briefing", action: "generate" });
+          if (data?.id) {
+            void deliverBriefingToChannels({
+              userId,
+              briefingId: data.id,
+              title: data.title || parsed.title,
+              summary: data.summary || parsed.summary,
+              channels: prefs.briefingChannels,
+            }).catch((err) => console.error("[Briefings] channel delivery failed:", err));
+          }
           return NextResponse.json(data);
         }
       } catch (aiError: any) {
@@ -374,6 +412,15 @@ RULES:
 
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 500 });
     void trackFeatureUsage({ userId, feature: "briefing", action: "generate" });
+    if (dbData?.id) {
+      void deliverBriefingToChannels({
+        userId,
+        briefingId: dbData.id,
+        title: dbData.title,
+        summary: dbData.summary,
+        channels: prefs.briefingChannels,
+      }).catch((err) => console.error("[Briefings] channel delivery failed:", err));
+    }
     return NextResponse.json(dbData);
 
   } catch (err: any) {

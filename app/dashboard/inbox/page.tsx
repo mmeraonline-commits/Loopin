@@ -264,6 +264,7 @@ export default function InboxPage() {
           body: item.body,
           replyContext: feature === "reply" ? replyContext : undefined,
           tone: feature === "reply" ? tone : undefined,
+          userId: feature === "reply" ? user?.id : undefined,
         }),
       });
       const data = await res.json();

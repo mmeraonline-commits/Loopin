@@ -1,5 +1,5 @@
 /**
- * Snoooz-style Gmail categorization.
+ * Gmail categorization for auto-triage.
  * Priority: promotional & notifications first — never draft those.
  * "Urgent sale" marketing ≠ human urgent.
  */

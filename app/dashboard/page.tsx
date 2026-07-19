@@ -84,6 +84,8 @@ import {
 } from "@/lib/feature-flags";
 import Link from "next/link";
 import { RedeemCodeForm } from "@/components/redeem-code-form";
+import { ToneTrainingSection } from "@/components/settings/tone-training-section";
+import { FieldLabel, MultiChoiceSetting, SettingsSection, ToggleSetting } from "@/components/settings/settings-ui";
 import {
   PLAN_ORDER,
   PLANS,
@@ -2435,7 +2437,7 @@ const PLATFORMS: Platform[] = [
   {
     id: "telegram",
     name: "Telegram",
-    desc: "Index channel events, query group chat messages, and send alert notices.",
+    desc: "Coming soon — Telegram connect is not available yet.",
     logo: "/004-telegram.png",
     color: "text-sky-400",
     bg: "from-sky-500/10 via-transparent to-sky-500/5",
@@ -2579,7 +2581,8 @@ function IntegrationsPanel() {
   const userPlanId = getPlan(user?.plan).id;
 
   const isChannelAllowed = (platformId: string) => {
-    if (platformId === "telegram" || platformId === "custom") return true;
+    if (platformId === "custom") return true;
+    if (platformId === "telegram") return false; // Coming soon — no real connect API yet
     return canUseChannel(userPlanId, platformId as ChannelId);
   };
 
@@ -2875,6 +2878,8 @@ function IntegrationsPanel() {
             showToast("Add CALENDLY_CLIENT_ID and CALENDLY_CLIENT_SECRET to .env.local");
           }
         }
+      } else if (platformId === "telegram") {
+        showToast("Telegram is coming soon — connect isn’t available yet.");
       } else {
         // For other platforms (simulated state toggler)
         const updatedIntegrations = {
@@ -3456,15 +3461,33 @@ function AlertsPanel({
   const [aiSuggestedAction, setAiSuggestedAction] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [replyGuidance, setReplyGuidance] = useState("");
-  const [form, setForm] = useState({
-    name: "",
-    description: "",
-    apps: ["gmail"] as string[],
-    condition: "",
-    priority: "medium",
-    notificationMethod: "in_app",
-    frequency: "real_time",
-    action: "notify"
+  const [form, setForm] = useState(() => {
+    let notificationMethod = "in_app";
+    let frequency = "real_time";
+    try {
+      const raw = localStorage.getItem("omnisync_assistant_settings");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed.alertMethods) && parsed.alertMethods[0]) {
+          notificationMethod = parsed.alertMethods[0];
+        }
+        if (typeof parsed.syncFrequency === "string" && parsed.syncFrequency) {
+          frequency = parsed.syncFrequency;
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+    return {
+      name: "",
+      description: "",
+      apps: ["gmail"] as string[],
+      condition: "",
+      priority: "medium",
+      notificationMethod,
+      frequency,
+      action: "notify",
+    };
   });
 
   const appOptions = [
@@ -3473,7 +3496,6 @@ function AlertsPanel({
     { key: "slack", label: "Slack", logo: "/005-slack.png" },
     { key: "discord", label: "Discord", logo: "/006-discord.png" },
     { key: "calendly", label: "Calendly", logo: "/008-calendly.svg" },
-    { key: "telegram", label: "Telegram", logo: "/004-telegram.png" },
   ];
 
   const connectedApps: Record<string, boolean> = {
@@ -3482,7 +3504,6 @@ function AlertsPanel({
     slack: !!currentUser?.integrations?.slack?.connected && !currentUser?.integrations?.slack?.isSimulated,
     discord: !!currentUser?.integrations?.discord?.connected && !currentUser?.integrations?.discord?.isSimulated,
     calendly: !!currentUser?.integrations?.calendly?.connected && !currentUser?.integrations?.calendly?.isSimulated,
-    telegram: !!currentUser?.integrations?.telegram?.connected && !currentUser?.integrations?.telegram?.isSimulated,
   };
   const monitorableAppKeys = ["gmail", "whatsapp", "slack", "discord"] as const;
   const connectedAppKeys = monitorableAppKeys.filter(key => connectedApps[key]);
@@ -3728,8 +3749,26 @@ function AlertsPanel({
           apps: connectedAppKeys.slice(0, 1),
           condition: "",
           priority: "medium",
-          notificationMethod: "in_app",
-          frequency: "real_time",
+          notificationMethod: (() => {
+            try {
+              const raw = localStorage.getItem("omnisync_assistant_settings");
+              const parsed = raw ? JSON.parse(raw) : null;
+              return Array.isArray(parsed?.alertMethods) && parsed.alertMethods[0]
+                ? parsed.alertMethods[0]
+                : "in_app";
+            } catch {
+              return "in_app";
+            }
+          })(),
+          frequency: (() => {
+            try {
+              const raw = localStorage.getItem("omnisync_assistant_settings");
+              const parsed = raw ? JSON.parse(raw) : null;
+              return typeof parsed?.syncFrequency === "string" ? parsed.syncFrequency : "real_time";
+            } catch {
+              return "real_time";
+            }
+          })(),
           action: "notify",
         });
         await Promise.all([fetchAlerts(), fetchAlertRules(), fetchSuggestions()]);
@@ -3997,8 +4036,26 @@ function AlertsPanel({
       apps: suggestion.apps,
       condition: suggestion.condition,
       priority: suggestion.priority,
-      notificationMethod: "in_app",
-      frequency: "real_time",
+      notificationMethod: (() => {
+        try {
+          const raw = localStorage.getItem("omnisync_assistant_settings");
+          const parsed = raw ? JSON.parse(raw) : null;
+          return Array.isArray(parsed?.alertMethods) && parsed.alertMethods[0]
+            ? parsed.alertMethods[0]
+            : "in_app";
+        } catch {
+          return "in_app";
+        }
+      })(),
+      frequency: (() => {
+        try {
+          const raw = localStorage.getItem("omnisync_assistant_settings");
+          const parsed = raw ? JSON.parse(raw) : null;
+          return typeof parsed?.syncFrequency === "string" ? parsed.syncFrequency : "real_time";
+        } catch {
+          return "real_time";
+        }
+      })(),
       action: wantsDraft ? "draft_reply" : suggestion.action
     });
     setShowCreateDialog(true);
@@ -4683,9 +4740,6 @@ type AssistantSettings = {
   syncFrequency: "real_time" | "15_minutes" | "hourly";
   alertPriority: "all" | "medium_high" | "high";
   alertMethods: string[];
-  dataRetention: "30_days" | "90_days" | "1_year";
-  saveAiMemory: boolean;
-  shareUsageAnalytics: boolean;
 };
 
 type SettingsUser = {
@@ -4721,117 +4775,7 @@ function getDefaultAssistantSettings(user?: SettingsUser | null): AssistantSetti
     syncFrequency: "real_time",
     alertPriority: "medium_high",
     alertMethods: ["in_app"],
-    dataRetention: "90_days",
-    saveAiMemory: true,
-    shareUsageAnalytics: false,
   };
-}
-
-function SettingsSection({
-  icon: Icon,
-  title,
-  description,
-  children,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  description: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="bg-white dark:bg-[#0d111e]/70 border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-sm">
-      <div className="flex items-start gap-3 mb-5">
-        <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-500 flex items-center justify-center flex-shrink-0">
-          <Icon className="w-5 h-5" />
-        </div>
-        <div>
-          <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">{title}</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{description}</p>
-        </div>
-      </div>
-      <div className="space-y-4">{children}</div>
-    </section>
-  );
-}
-
-function FieldLabel({ label, hint }: { label: string; hint?: string }) {
-  return (
-    <div>
-      <span className="block text-xs font-bold text-slate-700 dark:text-slate-300">{label}</span>
-      {hint && <span className="block text-[11px] text-slate-500 dark:text-slate-500 mt-0.5">{hint}</span>}
-    </div>
-  );
-}
-
-function ToggleSetting({
-  checked,
-  onChange,
-  label,
-  hint,
-}: {
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-  label: string;
-  hint: string;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.03] px-3 py-3">
-      <FieldLabel label={label} hint={hint} />
-      <button
-        type="button"
-        onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full border p-0.5 transition ${
-          checked
-            ? "bg-violet-600 border-violet-500"
-            : "bg-slate-200 dark:bg-slate-800 border-slate-300 dark:border-white/10"
-        }`}
-        aria-pressed={checked}
-        title={checked ? "Enabled" : "Disabled"}
-      >
-        <span
-          className={`h-5 w-5 rounded-full bg-white shadow transition ${
-            checked ? "translate-x-5" : "translate-x-0"
-          }`}
-        />
-      </button>
-    </div>
-  );
-}
-
-function MultiChoiceSetting({
-  options,
-  selected,
-  onChange,
-}: {
-  options: { value: string; label: string }[];
-  selected: string[];
-  onChange: (next: string[]) => void;
-}) {
-  const toggle = (value: string) => {
-    onChange(selected.includes(value) ? selected.filter(item => item !== value) : [...selected, value]);
-  };
-
-  return (
-    <div className="flex flex-wrap gap-2">
-      {options.map(option => {
-        const active = selected.includes(option.value);
-        return (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => toggle(option.value)}
-            className={`px-3 py-2 rounded-xl border text-xs font-bold transition ${
-              active
-                ? "border-violet-500 bg-violet-500/10 text-violet-500"
-                : "border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5"
-            }`}
-          >
-            {option.label}
-          </button>
-        );
-      })}
-    </div>
-  );
 }
 
 function SettingsPanel() {
@@ -4839,10 +4783,15 @@ function SettingsPanel() {
   const { theme, toggleTheme } = useTheme();
   const router = useRouter();
   const [settings, setSettings] = useState<AssistantSettings>(() => getDefaultAssistantSettings(user));
-  const [saveState, setSaveState] = useState<"idle" | "saved">("idle");
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [saveError, setSaveError] = useState("");
+  const [emailConfigured, setEmailConfigured] = useState(false);
   const push = usePushNotifications(user?.id);
   const [usage, setUsage] = useState<any>(null);
   const [usageError, setUsageError] = useState("");
+  const [emailTestMsg, setEmailTestMsg] = useState("");
+  const [emailTestErr, setEmailTestErr] = useState("");
+  const [emailTestLoading, setEmailTestLoading] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -4877,22 +4826,37 @@ function SettingsPanel() {
     fetch(`/api/assistant-settings?userId=${user.id}`)
       .then((r) => r.json())
       .then((data) => {
+        if (typeof data?.emailConfigured === "boolean") {
+          setEmailConfigured(data.emailConfigured);
+        }
         if (!data?.settings) return;
+        const s = data.settings;
         setSettings((current) => ({
           ...current,
-          responseTone: data.settings.responseTone || current.responseTone,
+          displayName: typeof s.displayName === "string" && s.displayName ? s.displayName : current.displayName,
+          roleContext: typeof s.roleContext === "string" && s.roleContext ? s.roleContext : current.roleContext,
+          timezone: typeof s.timezone === "string" && s.timezone ? s.timezone : current.timezone,
+          detailLevel: s.detailLevel || current.detailLevel,
+          responseTone: s.responseTone || current.responseTone,
           autoDraftReplies:
-            typeof data.settings.autoDraftReplies === "boolean"
-              ? data.settings.autoDraftReplies
-              : current.autoDraftReplies,
+            typeof s.autoDraftReplies === "boolean" ? s.autoDraftReplies : current.autoDraftReplies,
           gmailAutoDraftUrgent:
-            typeof data.settings.gmailAutoDraftCategories?.urgent === "boolean"
-              ? data.settings.gmailAutoDraftCategories.urgent
+            typeof s.gmailAutoDraftCategories?.urgent === "boolean"
+              ? s.gmailAutoDraftCategories.urgent
               : current.gmailAutoDraftUrgent,
           gmailAutoDraftNeedsReply:
-            typeof data.settings.gmailAutoDraftCategories?.needs_reply === "boolean"
-              ? data.settings.gmailAutoDraftCategories.needs_reply
+            typeof s.gmailAutoDraftCategories?.needs_reply === "boolean"
+              ? s.gmailAutoDraftCategories.needs_reply
               : current.gmailAutoDraftNeedsReply,
+          proactiveSuggestions:
+            typeof s.proactiveSuggestions === "boolean"
+              ? s.proactiveSuggestions
+              : current.proactiveSuggestions,
+          briefingCadence: s.briefingCadence || current.briefingCadence,
+          briefingChannels: Array.isArray(s.briefingChannels) ? s.briefingChannels : current.briefingChannels,
+          syncFrequency: s.syncFrequency || current.syncFrequency,
+          alertPriority: s.alertPriority || current.alertPriority,
+          alertMethods: Array.isArray(s.alertMethods) ? s.alertMethods : current.alertMethods,
         }));
       })
       .catch(() => {});
@@ -4901,37 +4865,114 @@ function SettingsPanel() {
   const updateSetting = <Key extends keyof AssistantSettings>(key: Key, value: AssistantSettings[Key]) => {
     setSettings(current => ({ ...current, [key]: value }));
     setSaveState("idle");
+    setSaveError("");
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
-    if (user?.id) {
-      void fetch("/api/assistant-settings", {
+    if (!user?.id) {
+      setSaveState("saved");
+      window.setTimeout(() => setSaveState("idle"), 2500);
+      return;
+    }
+    setSaveState("saving");
+    setSaveError("");
+    try {
+      const res = await fetch("/api/assistant-settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: user.id,
           settings: {
+            displayName: settings.displayName,
+            roleContext: settings.roleContext,
+            timezone: settings.timezone,
+            detailLevel: settings.detailLevel,
             responseTone: settings.responseTone,
             autoDraftReplies: settings.autoDraftReplies,
+            proactiveSuggestions: settings.proactiveSuggestions,
+            briefingCadence: settings.briefingCadence,
+            briefingChannels: settings.briefingChannels,
+            syncFrequency: settings.syncFrequency,
+            alertPriority: settings.alertPriority,
+            alertMethods: settings.alertMethods,
             gmailAutoDraftCategories: {
               urgent: settings.gmailAutoDraftUrgent,
               needs_reply: settings.gmailAutoDraftNeedsReply,
             },
           },
         }),
-      }).catch(() => {});
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setSaveState("error");
+        setSaveError(data.error || "Failed to save settings");
+        return;
+      }
+      setSaveState("saved");
+      window.setTimeout(() => setSaveState("idle"), 2500);
+    } catch {
+      setSaveState("error");
+      setSaveError("Failed to save settings");
+    }
+  };
+
+  const handleReset = async () => {
+    const defaults = getDefaultAssistantSettings(user);
+    setSettings(defaults);
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(defaults));
+    if (user?.id) {
+      try {
+        await fetch("/api/assistant-settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: user.id,
+            settings: {
+              ...defaults,
+              gmailAutoDraftCategories: {
+                urgent: defaults.gmailAutoDraftUrgent,
+                needs_reply: defaults.gmailAutoDraftNeedsReply,
+              },
+            },
+          }),
+        });
+      } catch {
+        /* ignore */
+      }
     }
     setSaveState("saved");
     window.setTimeout(() => setSaveState("idle"), 2500);
   };
 
-  const handleReset = () => {
-    const defaults = getDefaultAssistantSettings(user);
-    setSettings(defaults);
-    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(defaults));
-    setSaveState("saved");
-    window.setTimeout(() => setSaveState("idle"), 2500);
+  const handleExportSettings = () => {
+    const blob = new Blob(
+      [
+        JSON.stringify(
+          {
+            exportedAt: new Date().toISOString(),
+            plan: user?.plan || "starter",
+            settings,
+            usage: usage
+              ? {
+                  planName: usage.planName,
+                  used: usage.used,
+                  limits: usage.limits,
+                }
+              : null,
+          },
+          null,
+          2
+        ),
+      ],
+      { type: "application/json" }
+    );
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `loopin-settings-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   // Labeling is always on for every plan; native Gmail draft replies require Pro or higher.
@@ -4941,7 +4982,6 @@ function SettingsPanel() {
     { id: "gmail", name: "Gmail", logo: "/001-gmail.png", connected: !!user?.integrations?.gmail?.connected },
     { id: "whatsapp", name: "WhatsApp", logo: "/002-whatsapp.png", connected: !!user?.integrations?.whatsapp?.connected },
     { id: "slack", name: "Slack", logo: "/005-slack.png", connected: !!user?.integrations?.slack?.connected },
-    { id: "telegram", name: "Telegram", logo: "/004-telegram.png", connected: !!user?.integrations?.telegram?.connected },
     { id: "discord", name: "Discord", logo: "/006-discord.png", connected: !!user?.integrations?.discord?.connected },
   ];
 
@@ -4989,10 +5029,11 @@ function SettingsPanel() {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold shadow-lg shadow-violet-600/20 transition"
           >
             <Save className="w-4 h-4" />
-            {saveState === "saved" ? "Saved" : "Save Settings"}
+            {saveState === "saved" ? "Saved" : saveState === "saving" ? "Saving…" : saveState === "error" ? "Retry save" : "Save Settings"}
           </button>
         </div>
       </div>
+      {saveError ? <p className="text-xs text-rose-500 font-medium">{saveError}</p> : null}
 
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-6 items-start">
         <div className="space-y-6">
@@ -5156,6 +5197,8 @@ function SettingsPanel() {
             />
           </SettingsSection>
 
+          <ToneTrainingSection userId={user?.id} planId={user?.plan} />
+
           <SettingsSection
             icon={Newspaper}
             title="Briefings"
@@ -5181,9 +5224,13 @@ function SettingsPanel() {
                 options={[
                   { value: "in_app", label: "In-app" },
                   { value: "email", label: "Email" },
+                  { value: "push", label: "Push" },
                   { value: "whatsapp", label: "WhatsApp" },
                 ]}
               />
+              <p className="text-[11px] text-slate-500">
+                Digests always save in-app. Email uses Resend to your account email; WhatsApp needs a connected session; push needs this device enabled below.
+              </p>
             </div>
           </SettingsSection>
 
@@ -5318,38 +5365,50 @@ function SettingsPanel() {
                 Send test WhatsApp alert
               </button>
             </div>
+            <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] p-4 space-y-3">
+              <FieldLabel
+                label="Email alert delivery"
+                hint={
+                  emailConfigured
+                    ? user?.email
+                      ? `Alerts and briefing digests can be emailed to ${user.email} via Resend.`
+                      : "Resend is configured, but this account has no email address."
+                    : "Set RESEND_API_KEY and RESEND_FROM on the server to enable email delivery."
+                }
+              />
+              <button
+                type="button"
+                disabled={!user?.id || !emailConfigured || !user?.email || emailTestLoading}
+                onClick={async () => {
+                  if (!user?.id) return;
+                  setEmailTestLoading(true);
+                  setEmailTestMsg("");
+                  setEmailTestErr("");
+                  try {
+                    const res = await fetch("/api/alerts/notify-email-test", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ userId: user.id }),
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) setEmailTestErr(data.error || "Email test failed");
+                    else setEmailTestMsg("Test email sent — check your inbox.");
+                  } catch {
+                    setEmailTestErr("Email test failed");
+                  } finally {
+                    setEmailTestLoading(false);
+                  }
+                }}
+                className="px-3 py-2 rounded-xl border border-violet-500/30 text-xs font-bold text-violet-400 hover:bg-violet-500/10 disabled:opacity-50 transition"
+              >
+                {emailTestLoading ? "Sending…" : "Send test email"}
+              </button>
+              {emailTestMsg && <p className="text-[11px] text-emerald-500 font-medium">{emailTestMsg}</p>}
+              {emailTestErr && <p className="text-[11px] text-rose-500 font-medium">{emailTestErr}</p>}
+            </div>
           </SettingsSection>
 
-          <SettingsSection
-            icon={LockKeyhole}
-            title="Privacy & Data"
-            description="Manage memory, retention, and optional analytics for assistant improvement."
-          >
-            <label className="space-y-2 block">
-              <FieldLabel label="Data retention" hint="How long synced summaries and generated context are kept locally." />
-              <select
-                value={settings.dataRetention}
-                onChange={event => updateSetting("dataRetention", event.target.value as AssistantSettings["dataRetention"])}
-                className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-violet-500"
-              >
-                <option value="30_days">30 days</option>
-                <option value="90_days">90 days</option>
-                <option value="1_year">1 year</option>
-              </select>
-            </label>
-            <ToggleSetting
-              checked={settings.saveAiMemory}
-              onChange={value => updateSetting("saveAiMemory", value)}
-              label="Save assistant memory"
-              hint="Remember preferences that improve future summaries and drafts."
-            />
-            <ToggleSetting
-              checked={settings.shareUsageAnalytics}
-              onChange={value => updateSetting("shareUsageAnalytics", value)}
-              label="Product analytics"
-              hint="Allow anonymous usage signals for reliability and feature planning."
-            />
-          </SettingsSection>
+          {/* Privacy section removed — no retention/memory/analytics backends yet */}
         </div>
 
         <aside className="space-y-6 xl:sticky xl:top-24">
@@ -5429,6 +5488,7 @@ function SettingsPanel() {
             </div>
             <button
               type="button"
+              onClick={handleExportSettings}
               className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition"
             >
               <Download className="w-4 h-4" />
@@ -5461,13 +5521,13 @@ function SettingsPanel() {
             </button>
           </SettingsSection>
 
-          <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4">
+          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
             <div className="flex items-start gap-3">
-              <Database className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+              <Database className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
               <div>
-                <h4 className="text-xs font-black text-blue-600 dark:text-blue-300">Local preference storage</h4>
-                <p className="text-xs text-blue-700/80 dark:text-blue-200/80 mt-1 leading-relaxed">
-                  These controls are saved in this browser and can be wired to a backend preferences table when account-level syncing is added.
+                <h4 className="text-xs font-black text-emerald-700 dark:text-emerald-300">Synced to your account</h4>
+                <p className="text-xs text-emerald-800/80 dark:text-emerald-200/80 mt-1 leading-relaxed">
+                  Preferences save to your Loopin account and apply to drafts, briefings, alerts, and digests across devices.
                 </p>
               </div>
             </div>

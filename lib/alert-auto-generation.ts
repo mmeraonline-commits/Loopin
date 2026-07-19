@@ -2,8 +2,13 @@ import { GoogleGenAI } from "@google/genai";
 import { hasInsforgeAdminKey, insforgeAdmin } from "./insforge-admin";
 import { publishAlertRealtimeEvent } from "./alerts-realtime";
 import { encodeReplyRef, type ReplyRef } from "./send-reply";
-import { sendPushToUser } from "./push";
 import { maybeAutoDraftAlertReply } from "./auto-draft-reply";
+import { notifyUserOfAlert } from "./alert-notify";
+import { loadUserPreferences } from "./briefing-delivery";
+import {
+  passesAlertPriorityFilter,
+  resolveNotifyMethods,
+} from "./assistant-preferences";
 import {
   isAutomatedOrPromotional,
   looksNeedsReplyDraft,
@@ -516,7 +521,13 @@ export async function generateAutomaticAlertsForUser(
   let drafted = 0;
   let draftBudget = 3;
 
+  const prefs = await loadUserPreferences(userId);
+  const notifyMethods = resolveNotifyMethods("push", prefs.alertMethods);
+
   for (const candidate of candidates) {
+    if (!passesAlertPriorityFilter(candidate.priority, prefs.alertPriority)) {
+      continue;
+    }
     // The dedupe key ties one alert to one source item, so repeated cron runs
     // can safely rescan the same inbox/message history without duplicating rows.
     const dedupeKey = `auto-ai:${userId}:${candidate.sourceApp}:${candidate.activityId}`;
@@ -618,7 +629,7 @@ export async function generateAutomaticAlertsForUser(
           }
         : alert;
       await publishAlertRealtimeEvent(userId, "alert_created", { alert: enriched });
-      await sendPushToUser(userId, {
+      await notifyUserOfAlert(userId, notifyMethods, {
         title: draftResult.drafted ? `Draft ready: ${candidate.title}` : candidate.title,
         body: draftResult.drafted
           ? "Open Alerts → Confirm queue to review and send."
@@ -626,7 +637,7 @@ export async function generateAutomaticAlertsForUser(
         url: "/dashboard?tab=alerts&queue=confirm",
         icon: appLogo(candidate.sourceApp),
         tag: dedupeKey,
-      }).catch((err) => console.error("[alert-auto-generation] push failed:", err));
+      }).catch((err) => console.error("[alert-auto-generation] notify failed:", err));
     }
   }
 

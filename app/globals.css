@@ -9,6 +9,14 @@
   --color-brand-accent: #2D6A54;
   --color-brand-mint: #F2F9F6;
   --color-brand-mint-soft: #E8F3EE;
+  --color-brand-lime: #E4F27A;
+  --color-brand-lime-deep: #62701F;
+  --color-brand-ink: #12211C;
+
+  /* Landing-page-only type stack. Kept separate from the app's default
+     Geist font so the authenticated dashboard is unaffected. */
+  --font-display: var(--font-display-raw), ui-sans-serif, system-ui, sans-serif;
+  --font-landing: var(--font-landing-raw), ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {
@@ -392,4 +400,21 @@ html.light .via-\[\#0a0f1d\] {
 
 .animate-toast-out {
   animation: toast-out 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Simple fade-in used for lightweight, non-scroll-triggered UI (menus,
+   accordion panels, demo output) that doesn't need framer-motion. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

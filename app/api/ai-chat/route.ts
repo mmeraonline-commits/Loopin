@@ -12,6 +12,8 @@ import {
   assertSendQuota,
   isNextResponse,
 } from "@/lib/plan-usage";
+import { loadUserPreferences } from "@/lib/briefing-delivery";
+import { detailLevelGuide } from "@/lib/assistant-preferences";
 
 async function fetchMcpText(origin: string, path: string, body: Record<string, unknown>) {
   try {
@@ -236,8 +238,15 @@ export async function POST(req: NextRequest) {
         : `\n\nSYSTEM ACTION RESULT (authoritative): Failed to execute ${actionReceipt.tool}: ${actionReceipt.error}. You MUST tell the user it was NOT sent and show this error. Do NOT claim success.`
       : `\n\nSYSTEM ACTION RESULT: none yet.`;
 
+    const prefs = await loadUserPreferences(userId);
+
     const systemPrompt = `You are Loopin, an advanced AI Personal Assistant.
 You help the user stay productive across connected platforms.
+User: ${prefs.displayName || "User"}
+Context: ${prefs.roleContext}
+Timezone: ${prefs.timezone}
+${detailLevelGuide(prefs.detailLevel)}
+${prefs.proactiveSuggestions ? "You may suggest proactive next actions." : "Do not push unsolicited suggestions; only answer what is asked."}
 
 Synced data:
 === Gmail ===

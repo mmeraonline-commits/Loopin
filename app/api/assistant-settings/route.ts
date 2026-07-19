@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hasInsforgeAdminKey, insforgeAdmin } from "@/lib/insforge-admin";
+import { sanitizeToneInstructions, sanitizeToneSamples, sanitizeToneSignOff } from "@/lib/tone-profile";
+import { sanitizeUserPreferences } from "@/lib/assistant-preferences";
+import { syncManagedBriefingSchedules } from "@/lib/briefing-schedule-sync";
 
-/** Persist assistant settings (tone, auto-draft) used by server-side auto-draft jobs. */
+/** Persist assistant settings used by drafts, briefings, alerts, and UI. */
 export async function GET(req: NextRequest) {
   try {
     const userId = req.nextUrl.searchParams.get("userId");
@@ -14,16 +17,30 @@ export async function GET(req: NextRequest) {
 
     const { data, error } = await insforgeAdmin.database
       .from("users")
-      .select("assistant_settings")
+      .select("assistant_settings, name, email")
       .eq("id", userId)
       .maybeSingle();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    const raw = (data?.assistant_settings || {}) as Record<string, unknown>;
+    const prefs = sanitizeUserPreferences(raw, {
+      displayName: typeof data?.name === "string" ? data.name : "",
+    });
+
     return NextResponse.json({
-      settings: data?.assistant_settings || {
-        responseTone: "friendly",
-        autoDraftReplies: true,
+      settings: {
+        ...raw,
+        ...prefs,
+        responseTone: raw.responseTone || "friendly",
+        autoDraftReplies:
+          typeof raw.autoDraftReplies === "boolean" ? raw.autoDraftReplies : true,
+        gmailAutoDraftCategories: raw.gmailAutoDraftCategories || {
+          urgent: true,
+          needs_reply: true,
+        },
       },
+      emailConfigured: Boolean(process.env.RESEND_API_KEY),
     });
   } catch (err: unknown) {
     return NextResponse.json(
@@ -43,12 +60,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Server key missing" }, { status: 503 });
     }
 
-    // Merge onto the existing jsonb column instead of replacing it — this column
-    // also holds server-managed fields (gmailInboxSyncStartedAt, gmailLabelIds)
-    // that must survive a Settings page save.
     const { data: existingRow, error: fetchError } = await insforgeAdmin.database
       .from("users")
-      .select("assistant_settings")
+      .select("assistant_settings, integrations")
       .eq("id", userId)
       .maybeSingle();
 
@@ -58,8 +72,12 @@ export async function POST(req: NextRequest) {
     const currentCategories = (current.gmailAutoDraftCategories || {}) as Record<string, boolean>;
     const incomingCategories = settings.gmailAutoDraftCategories;
 
+    const prefs = sanitizeUserPreferences({ ...current, ...settings });
+
+    // Advanced tone fields are never written here — only /api/tone/sources.
     const patch = {
       ...current,
+      ...prefs,
       responseTone: settings.responseTone || current.responseTone || "friendly",
       autoDraftReplies:
         typeof settings.autoDraftReplies === "boolean"
@@ -67,6 +85,18 @@ export async function POST(req: NextRequest) {
           : typeof current.autoDraftReplies === "boolean"
             ? current.autoDraftReplies
             : true,
+      toneInstructions:
+        settings.toneInstructions !== undefined
+          ? sanitizeToneInstructions(settings.toneInstructions)
+          : current.toneInstructions ?? "",
+      toneSignOff:
+        settings.toneSignOff !== undefined
+          ? sanitizeToneSignOff(settings.toneSignOff)
+          : current.toneSignOff ?? "",
+      toneSamples:
+        settings.toneSamples !== undefined
+          ? sanitizeToneSamples(settings.toneSamples)
+          : current.toneSamples ?? [],
       ...(incomingCategories && typeof incomingCategories === "object"
         ? {
             gmailAutoDraftCategories: {
@@ -83,15 +113,51 @@ export async function POST(req: NextRequest) {
         : {}),
     };
 
+    const updatePayload: Record<string, unknown> = {
+      assistant_settings: patch,
+      updated_at: new Date().toISOString(),
+    };
+    if (prefs.displayName) {
+      updatePayload.name = prefs.displayName;
+    }
+
     const { data, error } = await insforgeAdmin.database
       .from("users")
-      .update({ assistant_settings: patch, updated_at: new Date().toISOString() })
+      .update(updatePayload)
       .eq("id", userId)
       .select("assistant_settings")
       .maybeSingle();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ settings: data?.assistant_settings || patch });
+
+    // Keep managed briefing_schedules in sync with cadence preference.
+    const integrations = (existingRow?.integrations || {}) as Record<
+      string,
+      { connected?: boolean; isSimulated?: boolean } | null | undefined
+    >;
+    const connectedApps = ["gmail", "whatsapp", "slack", "outlook", "discord"].filter(
+      (id) => integrations[id]?.connected && !integrations[id]?.isSimulated
+    );
+
+    let scheduleSync: { ok: boolean; error?: string } = { ok: true };
+    try {
+      await syncManagedBriefingSchedules({
+        userId,
+        cadence: prefs.briefingCadence,
+        timezone: prefs.timezone,
+        apps: connectedApps.length ? connectedApps : ["gmail"],
+      });
+    } catch (err) {
+      scheduleSync = {
+        ok: false,
+        error: err instanceof Error ? err.message : "Schedule sync failed",
+      };
+    }
+
+    return NextResponse.json({
+      settings: data?.assistant_settings || patch,
+      scheduleSync,
+    });
   } catch (err: unknown) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Internal Server Error" },

@@ -1,6 +1,14 @@
 import { GoogleGenAI } from "@google/genai";
 import { hasInsforgeAdminKey, insforgeAdmin } from "@/lib/insforge-admin";
 import { isAutomatedOrPromotional } from "@/lib/alert-message-filters";
+import {
+  buildTonePrompt,
+  sanitizeToneInstructions,
+  sanitizeToneKnowledgeSummary,
+  sanitizeToneSamples,
+  sanitizeToneSignOff,
+  type ToneSource,
+} from "@/lib/tone-profile";
 
 export type DraftTone = "direct" | "friendly" | "executive" | "professional" | "short" | "assertive";
 
@@ -17,6 +25,13 @@ export type AssistantSettingsSnapshot = {
   gmailInboxSyncStartedAt?: string;
   gmailLabelIds?: Record<string, string>;
   gmailAutoDraftCategories?: Partial<GmailAutoDraftCategoryToggles>;
+  /** Normal tone training (every plan). */
+  toneInstructions?: string;
+  toneSignOff?: string;
+  toneSamples?: string[];
+  /** Advanced tone training (Business+) — sources feed toneKnowledgeSummary. */
+  toneSources?: ToneSource[];
+  toneKnowledgeSummary?: string;
 };
 
 /** Required<AssistantSettingsSnapshot> is shallow — gmailAutoDraftCategories still needs its own keys spelled out. */
@@ -30,23 +45,12 @@ const DEFAULT_SETTINGS: ResolvedAssistantSettings = {
   gmailInboxSyncStartedAt: "",
   gmailLabelIds: {},
   gmailAutoDraftCategories: { urgent: true, needs_reply: true },
+  toneInstructions: "",
+  toneSignOff: "",
+  toneSamples: [],
+  toneSources: [],
+  toneKnowledgeSummary: "",
 };
-
-function toneGuide(tone: string): string {
-  switch (tone) {
-    case "direct":
-    case "assertive":
-      return "Confident and direct, still polite.";
-    case "executive":
-    case "professional":
-      return "Professional, polished, and concise.";
-    case "short":
-      return "Extremely concise (1-2 sentences).";
-    case "friendly":
-    default:
-      return "Warm and friendly.";
-  }
-}
 
 export async function loadAssistantSettings(userId: string): Promise<ResolvedAssistantSettings> {
   if (!hasInsforgeAdminKey) return DEFAULT_SETTINGS;
@@ -76,6 +80,12 @@ export async function loadAssistantSettings(userId: string): Promise<ResolvedAss
             ? raw.gmailAutoDraftCategories.needs_reply
             : DEFAULT_SETTINGS.gmailAutoDraftCategories.needs_reply,
       },
+      toneInstructions: sanitizeToneInstructions(raw.toneInstructions) || DEFAULT_SETTINGS.toneInstructions,
+      toneSignOff: sanitizeToneSignOff(raw.toneSignOff) || DEFAULT_SETTINGS.toneSignOff,
+      toneSamples: sanitizeToneSamples(raw.toneSamples),
+      toneSources: Array.isArray(raw.toneSources) ? raw.toneSources : DEFAULT_SETTINGS.toneSources,
+      toneKnowledgeSummary:
+        sanitizeToneKnowledgeSummary(raw.toneKnowledgeSummary) || DEFAULT_SETTINGS.toneKnowledgeSummary,
     };
   } catch {
     return DEFAULT_SETTINGS;
@@ -88,12 +98,22 @@ export async function generateAlertReplyDraft(input: {
   fullDetails?: string;
   sourceApp: string;
   tone?: string;
+  toneInstructions?: string;
+  toneSignOff?: string;
+  toneSamples?: string[];
+  toneKnowledgeSummary?: string;
   replyContext?: string;
 }): Promise<string | null> {
   const geminiApiKey = process.env.GEMINI_API_KEY;
   if (!geminiApiKey) return null;
 
-  const tone = toneGuide(input.tone || "friendly");
+  const toneBlock = buildTonePrompt({
+    responseTone: input.tone,
+    toneInstructions: input.toneInstructions,
+    toneSignOff: input.toneSignOff,
+    toneSamples: input.toneSamples,
+    toneKnowledgeSummary: input.toneKnowledgeSummary,
+  });
   const isEmail = input.sourceApp === "gmail" || input.sourceApp === "outlook";
   const prompt = isEmail
     ? `You are OmniSync, an AI personal assistant. Draft a reply email in the user's tone.
@@ -103,7 +123,7 @@ Description: ${input.description}
 Full Text / details:
 ${input.fullDetails || "None"}
 ${input.replyContext ? `User instruction: ${input.replyContext}` : ""}
-Tone: ${tone}
+${toneBlock}
 
 Instructions:
 - Write only the email body.
@@ -116,7 +136,7 @@ Title/Sender: ${input.title}
 Message: ${input.description}
 Details: ${input.fullDetails || "None"}
 ${input.replyContext ? `User instruction: ${input.replyContext}` : ""}
-Tone: ${tone}
+${toneBlock}
 
 Instructions:
 - Write only the message text.
@@ -173,6 +193,10 @@ export async function maybeAutoDraftAlertReply(alert: {
     fullDetails: alert.full_details,
     sourceApp: alert.source_app || "gmail",
     tone: settings.responseTone,
+    toneInstructions: settings.toneInstructions,
+    toneSignOff: settings.toneSignOff,
+    toneSamples: settings.toneSamples,
+    toneKnowledgeSummary: settings.toneKnowledgeSummary,
   });
 
   if (!draft) return { drafted: false };

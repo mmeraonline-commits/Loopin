@@ -8,6 +8,11 @@ import {
 import { encodeReplyRef } from "@/lib/send-reply";
 import { maybeAutoDraftAlertReply } from "@/lib/auto-draft-reply";
 import { notifyUserOfAlert } from "@/lib/alert-notify";
+import { loadUserPreferences } from "@/lib/briefing-delivery";
+import {
+  passesAlertPriorityFilter,
+  resolveNotifyMethods,
+} from "@/lib/assistant-preferences";
 
 export type AlertRuleRow = {
   id: string;
@@ -96,9 +101,15 @@ export async function runMonitorAlertRule(ruleId: string): Promise<{
     return { success: true, matches: 0, created: 0 };
   }
 
+  const prefs = await loadUserPreferences(typedRule.user_id);
+  if (!passesAlertPriorityFilter(typedRule.priority, prefs.alertPriority)) {
+    return { success: true, matches: 0, created: 0 };
+  }
+
   const activity = await fetchConnectedActivity(typedRule.user_id, typedRule.apps || []);
   const matches = activity.filter((item) => matchesAlertCondition(typedRule, item));
   let created = 0;
+  const notifyMethods = resolveNotifyMethods(typedRule.notification_method, prefs.alertMethods);
 
   for (const match of matches.slice(0, 8)) {
     const dedupeKey = `${typedRule.id}:${match.app}:${match.id}`;
@@ -171,7 +182,7 @@ export async function runMonitorAlertRule(ruleId: string): Promise<{
           }
         : alert;
       await publishAlertRealtimeEvent(typedRule.user_id, "alert_created", { alert: enriched });
-      await notifyUserOfAlert(typedRule.user_id, typedRule.notification_method, {
+      await notifyUserOfAlert(typedRule.user_id, notifyMethods, {
         title: typedRule.name,
         body: draftResult.drafted
           ? `Draft ready — confirm before send: ${match.description || typedRule.description || "New alert"}`

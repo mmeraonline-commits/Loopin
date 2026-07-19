@@ -147,6 +147,12 @@ export async function GET(req: NextRequest) {
     const locked = denySurface(planUser.plan, "aiSuggestedAlerts", "AI-suggested alerts");
     if (locked) return locked;
 
+    const { loadUserPreferences } = await import("@/lib/briefing-delivery");
+    const prefs = await loadUserPreferences(userId);
+    if (!prefs.proactiveSuggestions) {
+      return NextResponse.json({ suggestions: [], disabled: true });
+    }
+
     const { data: userRow, error } = await insforgeAdmin.database
       .from("users")
       .select("integrations")

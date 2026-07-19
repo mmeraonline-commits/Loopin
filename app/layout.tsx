@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Bricolage_Grotesque, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -14,9 +14,21 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Landing page typography only — scoped via the `font-display` / `font-landing`
+// utilities so the authenticated app keeps its existing Geist type.
+const displayFont = Bricolage_Grotesque({
+  variable: "--font-display-raw",
+  subsets: ["latin"],
+});
+
+const landingSans = Plus_Jakarta_Sans({
+  variable: "--font-landing-raw",
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
-  title: "Loopin | Connected AI Personal Assistant & Chief of Staff",
-  description: "Unify Gmail, WhatsApp, Telegram, and Outlook into a single cognitive brain. Let Loopin AI automatically summarize chat threads, extract action-item reminders, and draft context-aware replies.",
+  title: "Loopin | Your AI Chief of Staff for Gmail, WhatsApp & Slack",
+  description: "Loopin briefs you every morning, drafts replies in your voice, and flags what needs you — across Gmail, WhatsApp, and Slack. Confirm-before-send, always.",
 };
 
 export default function RootLayout({
@@ -27,7 +39,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${displayFont.variable} ${landingSans.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
