@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isEmailConfigured, sendEmailToUser } from "@/lib/email";
+import { buildTestEmailTemplate } from "@/lib/email-templates";
+import { hasInsforgeAdminKey, insforgeAdmin } from "@/lib/insforge-admin";
 
 /** Send a test email via Resend to the signed-in user's account email. */
 export async function POST(req: NextRequest) {
@@ -15,13 +17,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    let recipientName = "";
+    if (hasInsforgeAdminKey) {
+      const { data } = await insforgeAdmin.database
+        .from("users")
+        .select("name, email")
+        .eq("id", userId)
+        .maybeSingle();
+      recipientName =
+        (typeof data?.name === "string" && data.name) ||
+        (typeof data?.email === "string" ? data.email.split("@")[0] : "") ||
+        "";
+    }
+
+    const tpl = buildTestEmailTemplate({ recipientName });
     const result = await sendEmailToUser(userId, {
-      subject: "Loopin test email",
-      html: `<div style="font-family:system-ui,sans-serif;line-height:1.5">
-  <h2 style="margin:0 0 8px">Email delivery works</h2>
-  <p style="margin:0;color:#334155">This is a test from Loopin Settings. Alerts and briefings can reach you here.</p>
-</div>`,
-      text: "Email delivery works. This is a test from Loopin Settings.",
+      subject: "Loopin · Email delivery check",
+      html: tpl.html,
+      text: tpl.text,
     });
 
     if (!result.ok) {

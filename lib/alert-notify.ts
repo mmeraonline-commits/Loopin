@@ -1,6 +1,7 @@
 import { hasInsforgeAdminKey, insforgeAdmin } from "@/lib/insforge-admin";
 import { sendPushToUser } from "@/lib/push";
-import { escapeHtml, sendEmailToUser } from "@/lib/email";
+import { sendEmailToUser } from "@/lib/email";
+import { buildAlertEmailTemplate } from "@/lib/email-templates";
 import {
   callWhatsAppWorker,
   isWhatsAppWorkerConfigured,
@@ -61,19 +62,17 @@ export async function notifyUserOfAlert(
       if (channel === "email") {
         const appUrl =
           process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-        const absoluteUrl = payload.url
-          ? payload.url.startsWith("http")
-            ? payload.url
-            : `${appUrl}${payload.url}`
-          : `${appUrl}/dashboard?tab=alerts`;
+        const path = payload.url || "/dashboard?tab=alerts";
+        const absoluteUrl = path.startsWith("http") ? path : `${appUrl}${path}`;
+        const tpl = buildAlertEmailTemplate({
+          title: payload.title,
+          body: payload.body,
+          url: path,
+        });
         results.email = await sendEmailToUser(userId, {
-          subject: `Loopin Alert: ${payload.title}`,
-          html: `<div style="font-family:system-ui,sans-serif;line-height:1.5">
-  <h2 style="margin:0 0 8px">${escapeHtml(payload.title)}</h2>
-  <p style="margin:0 0 16px;color:#334155">${escapeHtml(payload.body)}</p>
-  <p><a href="${escapeHtml(absoluteUrl)}" style="color:#7c3aed;font-weight:600">Open in Loopin</a></p>
-</div>`,
-          text: `${payload.title}\n\n${payload.body}\n\nOpen: ${absoluteUrl}`,
+          subject: `Loopin Alert · ${payload.title}`,
+          html: tpl.html,
+          text: tpl.text || `${payload.title}\n\n${payload.body}\n\nOpen: ${absoluteUrl}`,
         });
         continue;
       }

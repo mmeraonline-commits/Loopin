@@ -2,6 +2,7 @@
 
 import {
   classifyGmailMessage,
+  isLoopinOwnEmail,
   isNotificationEmail,
   isPromotionalEmail,
   type GmailMessageInput,
@@ -31,7 +32,7 @@ export function isAutomatedOrPromotional(item: FilterableMessage): boolean {
   const app = (item.app || "gmail").toLowerCase();
   if (app === "gmail") {
     const msg = toGmailInput(item);
-    return isPromotionalEmail(msg) || isNotificationEmail(msg);
+    return isLoopinOwnEmail(msg) || isPromotionalEmail(msg) || isNotificationEmail(msg);
   }
   if (app !== "outlook") return false;
 

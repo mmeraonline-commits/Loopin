@@ -12,11 +12,58 @@ export function isEmailConfigured(): boolean {
 }
 
 function getFromAddress(): string {
-  return (
+  const raw =
     process.env.RESEND_FROM ||
+    process.env.RESEND_FROM_EMAIL ||
     process.env.EMAIL_FROM ||
-    "Loopin <onboarding@resend.dev>"
-  );
+    "Loopin <onboarding@resend.dev>";
+  if (raw.includes("<") && raw.includes(">")) return raw;
+  if (raw.includes("@")) return `Loopin <${raw.trim()}>`;
+  return raw;
+}
+
+export { escapeHtml } from "@/lib/email-templates";
+
+async function sendWithResend(
+  to: string,
+  payload: EmailPayload
+): Promise<{ ok: boolean; skipped?: boolean; error?: string; id?: string }> {
+  if (!isEmailConfigured()) {
+    return { ok: false, skipped: true, error: "RESEND_API_KEY not configured" };
+  }
+  try {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const { data, error: sendError } = await resend.emails.send({
+      from: getFromAddress(),
+      to: [to],
+      subject: payload.subject,
+      html: payload.html,
+      text:
+        payload.text ||
+        payload.html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
+    });
+    if (sendError) {
+      return { ok: false, error: sendError.message || "Resend send failed" };
+    }
+    return { ok: true, id: data?.id };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Email send failed",
+    };
+  }
+}
+
+/** Send to an explicit address (scripts / previews). */
+export async function sendEmailToAddress(
+  to: string,
+  payload: EmailPayload
+): Promise<{ ok: boolean; skipped?: boolean; error?: string; id?: string }> {
+  const email = String(to || "").trim();
+  if (!email.includes("@")) {
+    return { ok: false, error: "Invalid recipient email" };
+  }
+  return sendWithResend(email, payload);
 }
 
 /**
@@ -27,9 +74,6 @@ export async function sendEmailToUser(
   userId: string,
   payload: EmailPayload
 ): Promise<{ ok: boolean; skipped?: boolean; error?: string; id?: string }> {
-  if (!isEmailConfigured()) {
-    return { ok: false, skipped: true, error: "RESEND_API_KEY not configured" };
-  }
   if (!hasInsforgeAdminKey) {
     return { ok: false, error: "Server database key missing" };
   }
@@ -53,33 +97,5 @@ export async function sendEmailToUser(
     };
   }
 
-  try {
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    const { data, error: sendError } = await resend.emails.send({
-      from: getFromAddress(),
-      to: [to],
-      subject: payload.subject,
-      html: payload.html,
-      text: payload.text || payload.html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
-    });
-
-    if (sendError) {
-      return { ok: false, error: sendError.message || "Resend send failed" };
-    }
-    return { ok: true, id: data?.id };
-  } catch (err) {
-    return {
-      ok: false,
-      error: err instanceof Error ? err.message : "Email send failed",
-    };
-  }
-}
-
-/** Escape HTML for safe injection into email bodies. */
-export function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+  return sendWithResend(to, payload);
 }

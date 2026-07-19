@@ -14,6 +14,7 @@ import { hasInsforgeAdminKey, insforgeAdmin } from "./insforge-admin";
 import { getPlan, planRank } from "./plans";
 import {
   classifyGmailMessage,
+  isLoopinOwnEmail,
   isNotificationEmail,
   isPromotionalEmail,
   LOOPIN_LABEL_NAMES,
@@ -167,6 +168,8 @@ function toGmailMessageInput(msg: GmailListMessage): GmailMessageInput {
 /** Obvious bulk/marketing/system mail never needs an LLM call — same cost pattern as alert-auto-generation. */
 function heuristicPrecheck(msg: GmailListMessage): TriageCategory | null {
   const input = toGmailMessageInput(msg);
+  // Own product mail first — alert subjects often look "urgent" / "needs reply" to Gemini.
+  if (isLoopinOwnEmail(input)) return "notification";
   if (isPromotionalEmail(input)) return "promotional";
   if (isNotificationEmail(input)) return "notification";
   return null;
@@ -217,6 +220,7 @@ Category rules:
 
 Rules:
 - Judge sender type first: no-reply/bulk senders are never "urgent" or "needs_reply".
+- Mail FROM Loopin (e.g. loopin@…, subjects like "Loopin Alert", "Loopin · …", "[Preview] Loopin …") is ALWAYS "notification" — never draft a reply to our own product emails.
 - When unsure between "needs_reply" and "other", choose "other" (false negatives are cheaper than drafting a reply nobody needed).
 - Do not invent facts. Classify every provided id exactly once.`;
 }
@@ -405,6 +409,7 @@ export async function runGmailAutoTriage(userId: string): Promise<GmailAutoTriag
         const shouldTryDraft =
           draftBudget > 0 &&
           !!msg.threadId &&
+          !isLoopinOwnEmail(toGmailMessageInput(msg)) &&
           canAutoDraftCategory(msg.category, row.plan, draftSettings);
 
         if (shouldTryDraft && msg.threadId) {

@@ -32,6 +32,47 @@ function fromAddress(msg: GmailMessageInput): string {
   return (msg.from || "").toLowerCase();
 }
 
+function extractEmail(from: string): string {
+  const match = from.match(/<([^>]+)>/);
+  return (match ? match[1] : from).trim().toLowerCase();
+}
+
+/** Loopin's own transactional mail (alerts/briefings/tests) — never draft a reply. */
+export function isLoopinOwnEmail(msg: GmailMessageInput): boolean {
+  const from = fromAddress(msg);
+  const email = extractEmail(from);
+  const subject = (msg.subject || "").trim();
+  const text = textOf(msg);
+
+  const configuredFrom = [
+    process.env.RESEND_FROM,
+    process.env.RESEND_FROM_EMAIL,
+    process.env.EMAIL_FROM,
+  ]
+    .map((v) => extractEmail(String(v || "")))
+    .filter(Boolean);
+
+  if (configuredFrom.some((addr) => addr && email === addr)) return true;
+  if (/@(?:spendify\.com\.ng|resend\.dev)$/i.test(email) && /loopin/i.test(from)) return true;
+  if (/^loopin\b/i.test(from) && /@(?:spendify\.com\.ng|resend\.dev)$/i.test(email)) return true;
+
+  // Subjects: "Loopin Alert …", "Loopin · …", "[Preview] Loopin …", "Loopin test email …"
+  if (/^(\[preview\]\s*)?loopin\b/i.test(subject)) {
+    return true;
+  }
+
+  // Footer / brand fingerprint from lib/email-templates.ts
+  if (
+    /you.?re receiving this because email (notifications|is enabled).*loopin/i.test(text) ||
+    /sent (from|because).*loopin settings/i.test(text) ||
+    /©\s*\d{4}\s*loopin/i.test(text)
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 function isBulkSender(from: string): boolean {
   return /no[-_.]?reply|donotreply|mailer-daemon|notifications?@|newsletter@|news@|updates?@|billing@|receipts?@|noreply@|marketing@|promo@|deals?@|info@|hello@|team@|support@.*\.(zendesk|freshdesk|intercom)/i.test(
     from
@@ -69,6 +110,8 @@ export function isPromotionalEmail(msg: GmailMessageInput): boolean {
 
 /** System / account notices — label only, no draft. */
 export function isNotificationEmail(msg: GmailMessageInput): boolean {
+  if (isLoopinOwnEmail(msg)) return true;
+
   if (msg.labels?.includes("CATEGORY_UPDATES")) {
     const text = textOf(msg);
     if (!/(can|could|would) you|please reply|let me know|\?/.test(text)) {
@@ -119,6 +162,15 @@ function hasRealUrgency(text: string): boolean {
 export function classifyGmailMessage(msg: GmailMessageInput): GmailClassification {
   const text = textOf(msg);
   const subject = msg.subject || "";
+
+  if (isLoopinOwnEmail(msg)) {
+    return {
+      category: "notification",
+      shouldDraft: false,
+      shouldLabel: true,
+      reason: "Loopin system email — no reply needed",
+    };
+  }
 
   if (isPromotionalEmail(msg)) {
     return {
