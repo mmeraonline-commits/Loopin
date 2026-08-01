@@ -73,6 +73,7 @@ export async function POST(req: NextRequest) {
     let whatsappSummary = "No WhatsApp messages synced.";
     let slackSummary = "No Slack messages synced.";
     let outlookSummary = "No Outlook messages synced.";
+    let outlookCalendarSummary = "No Outlook calendar events synced.";
     let discordSummary = "No Discord messages synced.";
     let linkedinSummary = "No LinkedIn profile synced.";
     let calendlySummary = "No Calendly events synced.";
@@ -136,6 +137,25 @@ export async function POST(req: NextRequest) {
               `From: ${m.from}\nSubject: ${m.subject}\nSnippet: ${m.snippet}\nDate: ${m.date}\nID: ${m.id}`
           )
           .join("\n---\n");
+      }
+
+      const calendar = await fetchMcpText(origin, "/api/outlook-mcp", {
+        method: "outlook_list_events",
+        params: {
+          timeMin: new Date().toISOString(),
+          timeMax: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+        userId,
+      });
+      if (calendar?.events?.length) {
+        outlookCalendarSummary = calendar.events
+          .map(
+            (e: any) =>
+              `Title: ${e.title}\nStart: ${e.start}\nEnd: ${e.end}\nLocation: ${e.location || "n/a"}\nOnline: ${e.isOnlineMeeting ? "yes" : "no"}\nID: ${e.id}`
+          )
+          .join("\n---\n");
+      } else {
+        outlookCalendarSummary = "Outlook connected — no upcoming events in the next 14 days.";
       }
     }
 
@@ -201,8 +221,8 @@ export async function POST(req: NextRequest) {
     // Don't let the model rephrase action failures (it was doubling words like "WhatsAppWhatsApp").
     if (actionReceipt && !actionReceipt.ok) {
       return NextResponse.json({
-        response: `Could not send via **${actionReceipt.tool}**: ${actionReceipt.error}`,
-        suggestions: ["Reconnect WhatsApp", "Try Discord instead", "Show connected apps"],
+        response: `Could not run **${actionReceipt.tool}**: ${actionReceipt.error}`,
+        suggestions: ["Reconnect Outlook", "Show connected apps", "Try again"],
         pendingAction: null,
         actionResult: actionReceipt,
       });
@@ -234,8 +254,8 @@ export async function POST(req: NextRequest) {
 
     const actionNote = actionReceipt
       ? actionReceipt.ok
-        ? `\n\nSYSTEM ACTION RESULT (authoritative): Successfully executed ${actionReceipt.tool}. Result: ${JSON.stringify(actionReceipt.result)}. You MUST tell the user it was sent successfully and include channel/message details from the result. Do NOT invent a send.`
-        : `\n\nSYSTEM ACTION RESULT (authoritative): Failed to execute ${actionReceipt.tool}: ${actionReceipt.error}. You MUST tell the user it was NOT sent and show this error. Do NOT claim success.`
+        ? `\n\nSYSTEM ACTION RESULT (authoritative): Successfully executed ${actionReceipt.tool}. Result: ${JSON.stringify(actionReceipt.result)}. You MUST tell the user it succeeded and include key details from the result (message sent, or Outlook event title/link/time). Do NOT invent success details.`
+        : `\n\nSYSTEM ACTION RESULT (authoritative): Failed to execute ${actionReceipt.tool}: ${actionReceipt.error}. You MUST tell the user it failed and show this error. Do NOT claim success.`
       : `\n\nSYSTEM ACTION RESULT: none yet.`;
 
     const prefs = await loadUserPreferences(userId);
@@ -258,8 +278,11 @@ ${whatsappSummary}
 === Slack ===
 ${slackSummary}
 
-=== Outlook ===
+=== Outlook mail ===
 ${outlookSummary}
+
+=== Outlook calendar ===
+${outlookCalendarSummary}
 
 === Discord ===
 ${discordSummary}
@@ -271,12 +294,12 @@ ${linkedinSummary}
 ${calendlySummary}
 ${actionNote}
 
-CRITICAL SEND RULES:
-1. You CANNOT send messages by yourself. Drafting is text-only until a real tool runs.
-2. When the user asks to reply/send on Discord/Slack/Gmail/WhatsApp/LinkedIn, or book/cancel/update Calendly:
+CRITICAL ACTION RULES:
+1. You CANNOT send messages or create calendar events by yourself. Draft first; a real tool runs only after user confirm.
+2. When the user asks to reply/send on Discord/Slack/Gmail/WhatsApp/LinkedIn, book/cancel/update Calendly, or add/remind via Outlook calendar:
    - First return a draft and set pendingAction with the exact tool + params.
-   - Ask them to confirm (they can click Confirm or type "yes"/"confirm"/"send it").
-3. NEVER say a message was sent / booking created unless SYSTEM ACTION RESULT says Successfully executed.
+   - Ask them to confirm (they can click Confirm or type "yes"/"confirm"/"add it"/"schedule it").
+3. NEVER say a message was sent / event created / booking created unless SYSTEM ACTION RESULT says Successfully executed.
 4. For Discord replies use tool "discord_reply_message" with params:
    { "channelId": "...", "replyToMessageId": "...", "content": "..." }
    Use channelId and messageId from the Discord context above.
@@ -288,6 +311,10 @@ CRITICAL SEND RULES:
 10. For Calendly booking use "calendly_create_booking" with eventTypeUri + startTime (UTC ISO) + email (+ name/timezone).
 11. For Calendly cancel use "calendly_cancel_event" with eventUuid (+ reason).
 12. For Calendly event type edits use "calendly_update_event_type" with eventTypeUri + fields to change.
+13. For Outlook calendar reminders/meetings use "outlook_create_event" with:
+   { "summary": "event title", "start": "YYYY-MM-DDTHH:mm:ss", "end": "YYYY-MM-DDTHH:mm:ss", "timeZone": "${prefs.timezone}", "description": "optional notes", "reminderMinutesBeforeStart": 30 }
+   Use the user's timezone (${prefs.timezone}). Prefer a short timed block (e.g. 15–30 minutes) near the deadline they mentioned. Do NOT invent that Outlook calendar is unavailable — the tool exists when Outlook is connected.
+14. To refresh/list Outlook calendar beyond the synced window, use "outlook_list_events" with optional timeMin/timeMax (ISO). Still require confirm before running.
 
 Return EXACT JSON:
 {
@@ -296,10 +323,10 @@ Return EXACT JSON:
   "pendingAction": null
 }
 
-When drafting a send that needs confirmation, set pendingAction like:
+When drafting an action that needs confirmation, set pendingAction like:
 {
-  "tool": "discord_reply_message",
-  "params": { "channelId": "...", "replyToMessageId": "...", "content": "draft text" }
+  "tool": "outlook_create_event",
+  "params": { "summary": "StackSocial offer ends", "start": "2026-08-02T09:00:00", "end": "2026-08-02T09:30:00", "timeZone": "${prefs.timezone}", "description": "..." }
 }
 
 If SYSTEM ACTION RESULT already ran, set pendingAction to null.`;
@@ -321,11 +348,11 @@ If SYSTEM ACTION RESULT already ran, set pendingAction to null.`;
       if (actionReceipt) {
         parsed.pendingAction = null;
         parsed.actionResult = actionReceipt;
-        if (actionReceipt.ok && /not sent|failed|could not/i.test(String(parsed.response || ""))) {
-          parsed.response = `Sent via **${actionReceipt.tool}** successfully.\n\n${JSON.stringify(actionReceipt.result, null, 2)}`;
+        if (actionReceipt.ok && /not sent|failed|could not|do not have access/i.test(String(parsed.response || ""))) {
+          parsed.response = `Completed **${actionReceipt.tool}** successfully.\n\n${JSON.stringify(actionReceipt.result, null, 2)}`;
         }
         if (!actionReceipt.ok) {
-          parsed.response = `Could not send via **${actionReceipt.tool}**: ${actionReceipt.error}\n\n${parsed.response || ""}`;
+          parsed.response = `Could not run **${actionReceipt.tool}**: ${actionReceipt.error}\n\n${parsed.response || ""}`;
         }
       }
       if (!parsed.suggestions) {

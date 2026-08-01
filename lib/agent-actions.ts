@@ -28,6 +28,8 @@ const ALLOWED_TOOLS = new Set([
   "calendly_create_booking",
   "calendly_update_event_type",
   "calendly_enable_webhooks",
+  "outlook_create_event",
+  "outlook_list_events",
 ]);
 
 const TOOL_ROUTES: Record<string, string> = {
@@ -41,11 +43,13 @@ const TOOL_ROUTES: Record<string, string> = {
   calendly_create_booking: "/api/calendly-mcp",
   calendly_update_event_type: "/api/calendly-mcp",
   calendly_enable_webhooks: "/api/calendly-mcp",
+  outlook_create_event: "/api/outlook-mcp",
+  outlook_list_events: "/api/outlook-mcp",
 };
 
 export function isConfirmPrompt(text: string) {
   const t = text.trim().toLowerCase();
-  return /^(yes|yep|yeah|yup|confirm|confirmed|send it|send|approve|approved|go ahead|do it|ok|okay|sure|please send)([!.\s]|$)/i.test(
+  return /^(yes|yep|yeah|yup|confirm|confirmed|send it|send|approve|approved|go ahead|do it|ok|okay|sure|please send|add it|create it|schedule it|book it)([!.\s]|$)/i.test(
     t
   );
 }
@@ -79,6 +83,11 @@ export async function executeAgentAction(
   }
   if (action.tool === "whatsapp_send_message") {
     if (!params.to && params.chatId) params.to = params.chatId;
+  }
+  if (action.tool === "outlook_create_event") {
+    if (!params.summary && params.title) params.summary = params.title;
+    if (!params.summary && params.subject) params.summary = params.subject;
+    if (!params.description && params.body) params.description = params.body;
   }
 
   try {

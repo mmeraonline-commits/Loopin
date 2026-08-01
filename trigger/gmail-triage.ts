@@ -1,16 +1,10 @@
 import { schedules, task } from "@trigger.dev/sdk/v3";
-
-/** Production Cloudflare worker — set APP_URL in Trigger env to override. */
-const DEFAULT_APP_URL = "https://omnisync.mamutech-online.workers.dev";
+import { resolveAppUrl } from "../lib/app-url";
 
 /** Fallback if Cloudflare all=true is unavailable. */
 const DEFAULT_USER_IDS = ["b3c6d0bf-9858-4cbe-8912-18609fe2d431"];
 
-const APP_URL = (
-  process.env.APP_URL ||
-  process.env.NEXT_PUBLIC_APP_URL ||
-  DEFAULT_APP_URL
-).replace(/\/$/, "");
+const APP_URL = resolveAppUrl();
 
 function resolveUserIds(): string[] {
   const fromEnv = (process.env.GMAIL_TRIAGE_USER_IDS || "")

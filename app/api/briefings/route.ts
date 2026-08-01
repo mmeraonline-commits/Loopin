@@ -311,16 +311,27 @@ RULES:
           if (error) return NextResponse.json({ error: error.message }, { status: 500 });
           console.log(`[Briefings] AI briefing generated and saved: ${parsed.title}`);
           void trackFeatureUsage({ userId, feature: "briefing", action: "generate" });
+          let delivery: Record<string, unknown> | null = null;
           if (data?.id) {
-            void deliverBriefingToChannels({
-              userId,
-              briefingId: data.id,
-              title: data.title || parsed.title,
-              summary: data.summary || parsed.summary,
-              channels: prefs.briefingChannels,
-            }).catch((err) => console.error("[Briefings] channel delivery failed:", err));
+            // Must await on Cloudflare — void/background work is dropped after the response.
+            try {
+              delivery = await deliverBriefingToChannels({
+                userId,
+                briefingId: data.id,
+                title: data.title || parsed.title,
+                summary: data.summary || parsed.summary,
+                channels: prefs.briefingChannels,
+              });
+              console.log("[Briefings] channel delivery:", JSON.stringify(delivery));
+            } catch (err) {
+              console.error("[Briefings] channel delivery failed:", err);
+              delivery = {
+                ok: false,
+                error: err instanceof Error ? err.message : "delivery failed",
+              };
+            }
           }
-          return NextResponse.json(data);
+          return NextResponse.json({ ...data, delivery });
         }
       } catch (aiError: any) {
         console.error("[Briefings] Gemini generation failed:", aiError.message);
@@ -412,16 +423,26 @@ RULES:
 
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 500 });
     void trackFeatureUsage({ userId, feature: "briefing", action: "generate" });
+    let delivery: Record<string, unknown> | null = null;
     if (dbData?.id) {
-      void deliverBriefingToChannels({
-        userId,
-        briefingId: dbData.id,
-        title: dbData.title,
-        summary: dbData.summary,
-        channels: prefs.briefingChannels,
-      }).catch((err) => console.error("[Briefings] channel delivery failed:", err));
+      try {
+        delivery = await deliverBriefingToChannels({
+          userId,
+          briefingId: dbData.id,
+          title: dbData.title,
+          summary: dbData.summary,
+          channels: prefs.briefingChannels,
+        });
+        console.log("[Briefings] channel delivery:", JSON.stringify(delivery));
+      } catch (err) {
+        console.error("[Briefings] channel delivery failed:", err);
+        delivery = {
+          ok: false,
+          error: err instanceof Error ? err.message : "delivery failed",
+        };
+      }
     }
-    return NextResponse.json(dbData);
+    return NextResponse.json({ ...dbData, delivery });
 
   } catch (err: any) {
     console.error("Error in POST /api/briefings:", err);

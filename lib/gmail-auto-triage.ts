@@ -54,6 +54,8 @@ type GmailLabelMap = Record<string, string>;
 type GmailSyncBookkeeping = {
   gmailInboxSyncStartedAt?: string;
   gmailLabelIds?: GmailLabelMap;
+  /** Drafts Loopin created via auto-triage — used by the dashboard drafts list. */
+  loopinGmailDraftIds?: Array<{ id: string; createdAt: string; subject?: string }>;
 };
 
 type GmailListMessage = {
@@ -124,6 +126,24 @@ async function patchSyncBookkeeping(userId: string, patch: GmailSyncBookkeeping)
       updated_at: new Date().toISOString(),
     })
     .eq("id", userId);
+}
+
+async function rememberLoopinDraft(
+  userId: string,
+  draft: { id?: string; subject?: string }
+) {
+  if (!draft.id) return;
+  const current = await loadSyncBookkeeping(userId);
+  const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const prev = (current.loopinGmailDraftIds || []).filter((d) => {
+    const t = new Date(d.createdAt).getTime();
+    return d.id && !Number.isNaN(t) && t >= cutoff;
+  });
+  const next = [
+    { id: draft.id, createdAt: new Date().toISOString(), subject: draft.subject },
+    ...prev.filter((d) => d.id !== draft.id),
+  ].slice(0, 40);
+  await patchSyncBookkeeping(userId, { loopinGmailDraftIds: next });
 }
 
 /** Lists existing labels before creating (gmail_ensure_labels), so re-running this never creates duplicates. */
@@ -430,14 +450,19 @@ export async function runGmailAutoTriage(userId: string): Promise<GmailAutoTriag
             if (draftBody) {
               const to = parseReplyTo(msg.from || "");
               const subject = msg.subject || "Re:";
-              await callGmailMcp(userId, "gmail_create_draft", {
+              const draftSubject = subject.startsWith("Re:") ? subject : `Re: ${subject}`;
+              const created = await callGmailMcp(userId, "gmail_create_draft", {
                 to,
-                subject: subject.startsWith("Re:") ? subject : `Re: ${subject}`,
+                subject: draftSubject,
                 body: draftBody,
                 threadId: msg.threadId,
                 inReplyTo: msg.rfcMessageId,
                 references: msg.rfcMessageId,
               });
+              const draftId = created?.draft?.id as string | undefined;
+              if (draftId) {
+                await rememberLoopinDraft(userId, { id: draftId, subject: draftSubject });
+              }
               drafted += 1;
               draftBudget -= 1;
             }

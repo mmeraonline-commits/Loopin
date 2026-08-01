@@ -14,8 +14,9 @@ import {
   looksNeedsReplyDraft,
   looksUrgent,
 } from "./alert-message-filters";
+import { resolveAppUrl } from "./app-url";
 
-const APP_URL = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+const APP_URL = resolveAppUrl();
 const monitorableApps = new Set(["gmail", "whatsapp", "slack", "discord"]);
 
 type IntegrationValue = {

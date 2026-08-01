@@ -1,8 +1,7 @@
 import { task, schedules } from "@trigger.dev/sdk/v3";
 import { hasInsforgeAdminKey, insforgeAdmin } from "../lib/insforge-admin";
 import { insforge } from "../lib/insforge";
-
-const APP_URL = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+import { resolveAppUrl } from "../lib/app-url";
 
 function getDb() {
   return hasInsforgeAdminKey ? insforgeAdmin.database : insforge.database;
@@ -66,15 +65,18 @@ export const briefingCron = schedules.task({
 /**
  * Generator task: calls the same /api/briefings path as the dashboard
  * so Slack/Gmail/WhatsApp + Gemini stay in one place.
- * Requires APP_URL to be reachable from the Trigger worker (localhost in `trigger dev`).
+ * APP_URL must be the public Worker URL (never localhost in Trigger cloud).
  */
 export const generateBriefingTask = task({
   id: "generate-briefing-task",
   run: async (payload: { scheduleId?: string; userId: string }) => {
     const { scheduleId, userId } = payload;
-    console.log(`[generate-briefing-task] Starting for user=${userId} schedule=${scheduleId || "default"}`);
+    const appUrl = resolveAppUrl();
+    console.log(
+      `[generate-briefing-task] Starting for user=${userId} schedule=${scheduleId || "default"} appUrl=${appUrl}`
+    );
 
-    const res = await fetch(`${APP_URL}/api/briefings`, {
+    const res = await fetch(`${appUrl}/api/briefings`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId, scheduleId }),
@@ -82,11 +84,12 @@ export const generateBriefingTask = task({
 
     const body = await res.json().catch(() => ({}));
     if (!res.ok) {
-      console.error("[generate-briefing-task] API failed:", body?.error || res.statusText);
-      return { success: false, error: body?.error || res.statusText };
+      const message = body?.error || res.statusText || `HTTP ${res.status}`;
+      console.error("[generate-briefing-task] API failed:", message);
+      throw new Error(`Briefing API failed: ${message}`);
     }
 
     console.log(`[generate-briefing-task] Saved briefing: ${body?.title || body?.id || "ok"}`);
-    return { success: true, title: body?.title, id: body?.id };
+    return { success: true, title: body?.title, id: body?.id, appUrl };
   },
 });

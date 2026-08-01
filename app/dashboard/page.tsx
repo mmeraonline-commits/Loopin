@@ -51,7 +51,6 @@ import {
   HelpCircle,
   ChevronRight,
   Star,
-  Mic,
   ArrowUp,
   Link as LinkIcon,
   ShieldCheck,
@@ -230,6 +229,8 @@ function DashboardOverviewPanel({ user }: { user: any }) {
   const [confirmLoading, setConfirmLoading] = useState(true);
   const [gmailDrafts, setGmailDrafts] = useState<any[]>([]);
   const [gmailDraftsLoading, setGmailDraftsLoading] = useState(true);
+  const [dashChatInput, setDashChatInput] = useState("");
+  const canUseAgent = canUseSurface(getPlan(user?.plan).id, "aiAgent");
 
   const fetchBriefData = async (isRefresh = false) => {
     if (isRefresh) {
@@ -328,6 +329,23 @@ function DashboardOverviewPanel({ user }: { user: any }) {
     router.push("/dashboard?tab=integrations");
   };
 
+  const handleDashChatSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!canUseAgent) {
+      router.push("/dashboard?tab=pricing");
+      return;
+    }
+    const text = dashChatInput.trim();
+    if (!text) return;
+    try {
+      sessionStorage.setItem("loopin_pending_agent_prompt", text);
+    } catch {
+      /* ignore quota / private mode */
+    }
+    setDashChatInput("");
+    router.push("/dashboard?tab=ai-agent");
+  };
+
   const getAppIcon = (app: string) => {
     switch (app.toLowerCase()) {
       case "gmail":
@@ -355,7 +373,7 @@ function DashboardOverviewPanel({ user }: { user: any }) {
     { id: "gmail", name: "Gmail", icon: "/001-gmail.png", connected: !!user?.integrations?.gmail?.connected },
     { id: "whatsapp", name: "WhatsApp", icon: "/002-whatsapp.png", connected: !!user?.integrations?.whatsapp?.connected },
     { id: "slack", name: "Slack", icon: "/005-slack.png", connected: !!user?.integrations?.slack?.connected },
-    { id: "outlook", name: "Outlook Calendar", icon: "/003-email.png", connected: !!user?.integrations?.outlook?.connected },
+    { id: "outlook", name: "Outlook", icon: "/003-email.png", connected: !!user?.integrations?.outlook?.connected },
   ];
 
   return (
@@ -781,8 +799,8 @@ function DashboardOverviewPanel({ user }: { user: any }) {
                 {gmailDraftsLoading
                   ? "Loading…"
                   : gmailDrafts.length > 0
-                    ? `${gmailDrafts.length} draft${gmailDrafts.length === 1 ? "" : "s"} waiting in Gmail — review, edit, then send`
-                    : "No Gmail drafts waiting"}
+                    ? `${gmailDrafts.length} recent Loopin draft${gmailDrafts.length === 1 ? "" : "s"} — review, edit, then send`
+                    : "No recent Loopin drafts waiting"}
               </p>
             </div>
           </div>
@@ -839,33 +857,58 @@ function DashboardOverviewPanel({ user }: { user: any }) {
             </div>
             <p className="text-xs font-bold text-slate-700 dark:text-slate-200">No drafts waiting</p>
             <p className="text-[10px] text-slate-500 mt-1 max-w-[280px]">
-              When Loopin auto-drafts a reply for Urgent or Needs Reply mail, it shows up here so you can open Gmail and send it.
+              When Loopin auto-drafts a reply for Urgent or Needs Reply mail, recent drafts show up here so you can open Gmail and send them.
             </p>
           </div>
         )}
       </div>
 
-      {/* Bottom Chat / Ask Bar */}
-      <div className="relative w-full rounded-3xl border border-black/[0.05] dark:border-white/5 bg-white/60 dark:bg-[#0f172a]/40 backdrop-blur-md focus-within:border-purple-500/30 focus-within:shadow-md transition-all duration-300 p-3.5 flex items-center justify-between shadow-sm group mt-8">
-        <div className="flex items-center space-x-3 flex-1">
-          <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-950/30 border border-purple-200/50 dark:border-emerald-500/20 flex items-center justify-center text-brand-primary dark:text-brand-accent shadow-sm flex-shrink-0">
-            <Sparkles className="w-4.5 h-4.5 animate-pulse" />
+      {/* Bottom Chat / Ask Bar — hands off to AI Agent with the same /api/ai-chat capabilities */}
+      <form
+        onSubmit={handleDashChatSubmit}
+        className="relative w-full rounded-3xl border border-black/[0.05] dark:border-white/5 bg-white/60 dark:bg-[#0f172a]/40 backdrop-blur-md focus-within:border-emerald-500/30 focus-within:shadow-md transition-all duration-300 p-3.5 flex items-center justify-between shadow-sm group mt-8"
+      >
+        <div className="flex items-center space-x-3 flex-1 min-w-0">
+          <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-950/30 border border-emerald-200/50 dark:border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-sm flex-shrink-0">
+            <Sparkles className="w-4.5 h-4.5" />
           </div>
           <input
             type="text"
-            placeholder="How can I help you today?"
-            className="w-full bg-transparent border-none outline-none text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:ring-0 ml-3"
+            value={dashChatInput}
+            onChange={(e) => setDashChatInput(e.target.value)}
+            placeholder={
+              canUseAgent
+                ? "Ask AI Agent — check alerts, draft emails, search chat logs…"
+                : "AI Agent requires Pro — open Pricing to upgrade"
+            }
+            className="w-full bg-transparent border-none outline-none text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:ring-0 ml-1 min-w-0"
+            aria-label="Ask AI Agent"
           />
         </div>
-        <div className="flex items-center space-x-3">
-          <button className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition">
-            <Mic className="w-4.5 h-4.5" />
+        <div className="flex items-center space-x-2 flex-shrink-0">
+          <button
+            type="button"
+            onClick={() => {
+              if (!canUseAgent) {
+                router.push("/dashboard?tab=pricing");
+                return;
+              }
+              router.push("/dashboard?tab=ai-agent");
+            }}
+            className="hidden sm:inline-flex text-[10px] font-bold text-slate-500 hover:text-emerald-600 px-2.5 py-1.5 rounded-xl hover:bg-black/[0.03] dark:hover:bg-white/5 transition"
+          >
+            Open Agent
           </button>
-          <button className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-500 via-emerald-600 to-teal-600 text-white flex items-center justify-center shadow-md shadow-indigo-500/20 hover:scale-105 transition duration-300">
+          <button
+            type="submit"
+            disabled={canUseAgent && !dashChatInput.trim()}
+            className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-500 via-emerald-600 to-teal-600 text-white flex items-center justify-center shadow-md shadow-emerald-500/20 hover:scale-105 transition duration-300 disabled:opacity-50 disabled:hover:scale-100"
+            aria-label="Send to AI Agent"
+          >
             <ArrowUp className="w-4 h-4" />
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
@@ -889,7 +932,9 @@ function AiAgentPanel({ user }: { user: any }) {
     tool: string;
     params: Record<string, unknown>;
   } | null>(null);
+  const [historyReady, setHistoryReady] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const pendingPromptConsumed = useRef(false);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -907,9 +952,21 @@ function AiAgentPanel({ user }: { user: any }) {
           setMessages(parsed.messages);
         } else {
           localStorage.removeItem("omnisync_chat_history");
+          setMessages([
+            {
+              sender: "agent",
+              text: "Hello! I am your Loopin cognitive personal assistant. I monitor your connected Gmail, WhatsApp, and Telegram in real-time. Ask me to draft email replies, fetch summaries, or list your action items."
+            }
+          ]);
         }
       } catch (e) {
         console.error("Failed to restore history", e);
+        setMessages([
+          {
+            sender: "agent",
+            text: "Hello! I am your Loopin cognitive personal assistant. I monitor your connected Gmail, WhatsApp, and Telegram in real-time. Ask me to draft email replies, fetch summaries, or list your action items."
+          }
+        ]);
       }
     } else {
       // Default initial message
@@ -920,6 +977,7 @@ function AiAgentPanel({ user }: { user: any }) {
         }
       ]);
     }
+    setHistoryReady(true);
   }, []);
 
   useEffect(() => {
@@ -1065,6 +1123,22 @@ function AiAgentPanel({ user }: { user: any }) {
     ]);
   };
 
+  // Dashboard ask-bar → AI Agent handoff
+  useEffect(() => {
+    if (!historyReady || pendingPromptConsumed.current || loading) return;
+    let pending = "";
+    try {
+      pending = sessionStorage.getItem("loopin_pending_agent_prompt") || "";
+      if (pending) sessionStorage.removeItem("loopin_pending_agent_prompt");
+    } catch {
+      return;
+    }
+    if (!pending.trim()) return;
+    pendingPromptConsumed.current = true;
+    void executeSend(pending.trim());
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once after history restore
+  }, [historyReady]);
+
   const startNewConversation = () => {
     if (window.confirm("Are you sure you want to start a new conversation? This will clear the current chat history.")) {
       const initial = [
@@ -1198,7 +1272,17 @@ function AiAgentPanel({ user }: { user: any }) {
               <h3 className="text-sm font-bold text-slate-800 dark:text-white leading-tight">Loopin Intelligent Agent</h3>
               <p className="text-[10px] text-emerald-500 font-bold flex items-center mt-0.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span>
-                Connected to Gmail & WhatsApp
+                {(() => {
+                  const live = [
+                    user?.integrations?.gmail?.connected && !user?.integrations?.gmail?.isSimulated && "Gmail",
+                    user?.integrations?.whatsapp?.connected && !user?.integrations?.whatsapp?.isSimulated && "WhatsApp",
+                    user?.integrations?.slack?.connected && !user?.integrations?.slack?.isSimulated && "Slack",
+                    user?.integrations?.outlook?.connected && !user?.integrations?.outlook?.isSimulated && "Outlook",
+                    user?.integrations?.discord?.connected && !user?.integrations?.discord?.isSimulated && "Discord",
+                    user?.integrations?.calendly?.connected && !user?.integrations?.calendly?.isSimulated && "Calendly",
+                  ].filter(Boolean) as string[];
+                  return live.length ? `Connected to ${live.join(" · ")}` : "No live channels connected";
+                })()}
               </p>
             </div>
           </div>
@@ -1299,7 +1383,7 @@ function AiAgentPanel({ user }: { user: any }) {
               <div>
                 <p className="text-xs font-bold text-amber-500 uppercase tracking-wide">Pending send</p>
                 <p className="text-sm text-slate-700 dark:text-slate-200 mt-1">
-                  Ready to run <span className="font-mono text-xs">{pendingAction.tool}</span>. Nothing has been sent yet.
+                  Ready to run <span className="font-mono text-xs">{pendingAction.tool}</span>. Nothing has been applied yet.
                 </p>
                 {typeof pendingAction.params?.content === "string" && (
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 line-clamp-4 whitespace-pre-wrap">
@@ -1311,6 +1395,15 @@ function AiAgentPanel({ user }: { user: any }) {
                     {String(pendingAction.params.text)}
                   </p>
                 )}
+                {pendingAction.tool === "outlook_create_event" && (
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 whitespace-pre-wrap">
+                    {String(pendingAction.params?.summary || pendingAction.params?.title || "Outlook event")}
+                    {"\n"}
+                    {String(pendingAction.params?.start || "")}
+                    {pendingAction.params?.end ? ` → ${String(pendingAction.params.end)}` : ""}
+                    {pendingAction.params?.timeZone ? ` (${String(pendingAction.params.timeZone)})` : ""}
+                  </p>
+                )}
               </div>
               <div className="flex flex-wrap gap-2">
                 <button
@@ -1318,7 +1411,9 @@ function AiAgentPanel({ user }: { user: any }) {
                   onClick={handleConfirmPendingAction}
                   className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition"
                 >
-                  Confirm & send
+                  {pendingAction.tool === "outlook_create_event" || pendingAction.tool === "outlook_list_events"
+                    ? "Confirm"
+                    : "Confirm & send"}
                 </button>
                 <button
                   type="button"
@@ -2396,8 +2491,8 @@ const PLATFORMS: Platform[] = [
   },
   {
     id: "outlook",
-    name: "Outlook Calendar",
-    desc: "Analyze calendar appointments, list inbox, and manage event schedules.",
+    name: "Outlook",
+    desc: "Triage inbox with Loopin categories, draft replies, and manage calendar.",
     logo: "/003-email.png",
     color: "text-blue-400",
     bg: "from-blue-500/10 via-transparent to-blue-500/5",
@@ -2482,7 +2577,10 @@ const platformTools: Record<string, Array<{ name: string; desc: string; params: 
     { name: "slack_post_message", desc: "Post a message to a channel or DM", params: "channelId: string, text: string" }
   ],
   outlook: [
-    { name: "outlook_list_messages", desc: "List email messages in the user's inbox", params: "maxResults?: number" },
+    { name: "outlook_list_messages", desc: "List email messages in the user's inbox", params: "maxResults?: number, includeBody?: boolean" },
+    { name: "outlook_ensure_categories", desc: "Ensure Loopin triage categories exist", params: "categories: {name,color}[]" },
+    { name: "outlook_set_categories", desc: "Add/remove categories on a message", params: "messageId: string, addCategories?: string[], removeCategories?: string[]" },
+    { name: "outlook_create_reply_draft", desc: "Create a reply draft (never sends)", params: "messageId: string, body: string" },
     { name: "outlook_list_events", desc: "List upcoming calendar events", params: "timeMin?: string, timeMax?: string" },
     { name: "outlook_create_event", desc: "Create a new calendar event", params: "summary: string, start: string, end: string" }
   ],
@@ -4731,7 +4829,7 @@ type AssistantSettings = {
   detailLevel: "minimal" | "standard" | "detailed";
   responseTone: "direct" | "friendly" | "executive";
   autoDraftReplies: boolean;
-  /** Native Gmail draft (drafts.create) per category — labeling itself is always on. Pro plan and above only. */
+  /** Native Gmail/Outlook draft per category — labeling itself is always on. Pro plan and above only. */
   gmailAutoDraftUrgent: boolean;
   gmailAutoDraftNeedsReply: boolean;
   proactiveSuggestions: boolean;
@@ -5162,16 +5260,16 @@ function SettingsPanel() {
             />
             <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.03] p-3 space-y-3">
               <FieldLabel
-                label="Gmail auto-draft by category"
+                label="Email auto-draft by category"
                 hint={
                   canAutoDraftGmail
-                    ? "Loopin always labels new Gmail (Urgent / Needs reply / Notifications / Promotional). Choose which of those also get a draft reply saved directly in your Gmail Drafts folder for you to review, edit, and send."
-                    : "Gmail labeling is included on every plan. Native Gmail draft replies require the Pro plan or higher."
+                    ? "Loopin labels new Gmail and Outlook mail (Urgent / Needs reply / Notifications / Promotional). Choose which also get a draft reply in your Drafts folder for you to review and send."
+                    : "Email labeling is included when the channel is connected. Native draft replies require the Pro plan or higher."
                 }
               />
               {!canAutoDraftGmail && (
                 <p className="text-[11px] font-bold text-violet-500">
-                  Upgrade to Pro to unlock native Gmail draft replies.
+                  Upgrade to Pro to unlock native email draft replies.
                 </p>
               )}
               <div className={canAutoDraftGmail ? "space-y-3" : "space-y-3 opacity-50 pointer-events-none"}>
@@ -5179,13 +5277,13 @@ function SettingsPanel() {
                   checked={settings.gmailAutoDraftUrgent}
                   onChange={value => updateSetting("gmailAutoDraftUrgent", value)}
                   label="Auto-draft for Urgent"
-                  hint="Save a Gmail draft reply on threads Loopin labels Urgent."
+                  hint="Save a Gmail/Outlook draft reply on threads Loopin labels Urgent."
                 />
                 <ToggleSetting
                   checked={settings.gmailAutoDraftNeedsReply}
                   onChange={value => updateSetting("gmailAutoDraftNeedsReply", value)}
                   label="Auto-draft for Needs Reply"
-                  hint="Save a Gmail draft reply on threads Loopin labels Needs Reply."
+                  hint="Save a Gmail/Outlook draft reply on threads Loopin labels Needs Reply."
                 />
               </div>
             </div>

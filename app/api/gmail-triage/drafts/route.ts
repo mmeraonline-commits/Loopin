@@ -3,14 +3,40 @@ import { hasInsforgeAdminKey, insforgeAdmin } from "@/lib/insforge-admin";
 
 const APP_URL = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
+/** Show drafts from roughly the last two calendar days (covers "today" across timezones). */
+const RECENT_DRAFT_MS = 48 * 60 * 60 * 1000;
+
+type GmailDraftRow = {
+  id?: string;
+  subject?: string;
+  date?: string;
+  to?: string;
+  snippet?: string;
+  body?: string;
+  gmailUrl?: string;
+  threadId?: string;
+  messageId?: string;
+};
+
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Internal Server Error";
 }
 
+function hasUsableSubject(subject?: string): boolean {
+  const s = String(subject || "").trim();
+  return Boolean(s) && !/^no subject$/i.test(s);
+}
+
+function isRecentDraft(date?: string): boolean {
+  if (!date) return false;
+  const ms = new Date(date).getTime();
+  if (Number.isNaN(ms)) return false;
+  return Date.now() - ms <= RECENT_DRAFT_MS;
+}
+
 /**
  * Lists native Gmail drafts for the dashboard "ready to review" section.
- * These are drafts created in the user's real Gmail Drafts folder (drafts.create),
- * not the in-app Confirm Queue.
+ * Only recent / Loopin-created drafts — not old unused drafts sitting in Gmail.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -25,7 +51,7 @@ export async function GET(req: NextRequest) {
 
     const { data: userRow, error: userError } = await insforgeAdmin.database
       .from("users")
-      .select("integrations")
+      .select("integrations, assistant_settings")
       .eq("id", userId)
       .maybeSingle();
 
@@ -38,12 +64,26 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ drafts: [], count: 0, connected: false });
     }
 
+    const trackedIds = new Set(
+      (
+        ((userRow.assistant_settings || {}) as { loopinGmailDraftIds?: Array<{ id?: string; createdAt?: string }> })
+          .loopinGmailDraftIds || []
+      )
+        .filter((d) => {
+          if (!d?.id) return false;
+          if (!d.createdAt) return true;
+          const age = Date.now() - new Date(d.createdAt).getTime();
+          return !Number.isNaN(age) && age <= 7 * 24 * 60 * 60 * 1000;
+        })
+        .map((d) => String(d.id))
+    );
+
     const res = await fetch(`${APP_URL}/api/gmail-mcp`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         method: "gmail_list_drafts",
-        params: { maxResults: 8 },
+        params: { maxResults: 20 },
         userId,
       }),
     });
@@ -57,7 +97,12 @@ export async function GET(req: NextRequest) {
 
     const text = json.result?.content?.[0]?.text;
     const parsed = text ? JSON.parse(text) : { drafts: [] };
-    const drafts = Array.isArray(parsed.drafts) ? parsed.drafts : [];
+    const allDrafts: GmailDraftRow[] = Array.isArray(parsed.drafts) ? parsed.drafts : [];
+
+    const drafts = allDrafts.filter((d) => {
+      if (d.id && trackedIds.has(String(d.id))) return true;
+      return isRecentDraft(d.date) && hasUsableSubject(d.subject);
+    });
 
     return NextResponse.json({
       drafts,

@@ -8,8 +8,9 @@ const OUTLOOK_SCOPES = [
   "profile",
   "offline_access",
   "User.Read",
-  "Mail.Read",
+  "Mail.ReadWrite",
   "Mail.Send",
+  "MailboxSettings.ReadWrite",
   "Calendars.ReadWrite",
 ].join(" ");
 

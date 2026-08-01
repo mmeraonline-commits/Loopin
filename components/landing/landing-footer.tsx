@@ -3,13 +3,20 @@ import { Zap } from "lucide-react";
 import { GmailIcon, SlackIcon, WhatsAppIcon } from "./channel-icons";
 
 const PRODUCT_LINKS = [
-  { href: "#features", label: "Features" },
-  { href: "#capabilities", label: "Capabilities" },
-  { href: "#how-it-works", label: "How it works" },
-  { href: "#demo", label: "Live demo" },
-  { href: "#integrations", label: "Integrations" },
-  { href: "#pricing", label: "Pricing" },
-  { href: "#faq", label: "FAQ" },
+  { href: "/#features", label: "Features" },
+  { href: "/#capabilities", label: "Capabilities" },
+  { href: "/#how-it-works", label: "How it works" },
+  { href: "/#demo", label: "Live demo" },
+  { href: "/#integrations", label: "Integrations" },
+  { href: "/#pricing", label: "Pricing" },
+  { href: "/#faq", label: "FAQ" },
+];
+
+const COMPANY_LINKS = [
+  { href: "/about", label: "About" },
+  { href: "/privacy", label: "Privacy Policy" },
+  { href: "/terms", label: "Terms of Service" },
+  { href: "/contact", label: "Contact" },
 ];
 
 const CHANNELS = [
@@ -22,8 +29,8 @@ export function LandingFooter() {
   return (
     <footer className="relative z-10 bg-brand-ink px-6 pt-16 pb-8">
       <div className="mx-auto max-w-7xl">
-        <div className="grid grid-cols-1 gap-10 pb-14 sm:grid-cols-3">
-          <div className="space-y-4 sm:col-span-1">
+        <div className="grid grid-cols-1 gap-10 pb-14 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="space-y-4 sm:col-span-2 lg:col-span-1">
             <Link href="/" className="flex items-center gap-2.5">
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-primary">
                 <Zap className="h-4 w-4 text-white" fill="currentColor" />
@@ -40,9 +47,22 @@ export function LandingFooter() {
             <ul className="space-y-2 text-xs text-white/50">
               {PRODUCT_LINKS.map((link) => (
                 <li key={link.href}>
-                  <a href={link.href} className="transition hover:text-white">
+                  <Link href={link.href} className="transition hover:text-white">
                     {link.label}
-                  </a>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="space-y-4">
+            <h5 className="text-xs font-bold tracking-wider text-white uppercase">Company</h5>
+            <ul className="space-y-2 text-xs text-white/50">
+              {COMPANY_LINKS.map((link) => (
+                <li key={link.href}>
+                  <Link href={link.href} className="transition hover:text-white">
+                    {link.label}
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -73,8 +93,18 @@ export function LandingFooter() {
         </div>
 
         <div className="flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 text-xs text-white/40 md:flex-row">
-          <span>&copy; {new Date().getFullYear()} Loopin. All rights reserved.</span>
-          <span>Built for one person&apos;s day, not a support queue.</span>
+          <span>&copy; {new Date().getFullYear()} Loopin · Mamutech Online. All rights reserved.</span>
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+            <Link href="/privacy" className="transition hover:text-white">
+              Privacy
+            </Link>
+            <Link href="/terms" className="transition hover:text-white">
+              Terms
+            </Link>
+            <Link href="/contact" className="transition hover:text-white">
+              Contact
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

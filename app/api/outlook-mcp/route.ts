@@ -12,13 +12,15 @@ type OutlookIntegration = {
   isSimulated?: boolean;
 };
 
+/** Mail.ReadWrite required for categories + draft replies. */
 const OUTLOOK_SCOPES = [
   "openid",
   "profile",
   "offline_access",
   "User.Read",
-  "Mail.Read",
+  "Mail.ReadWrite",
   "Mail.Send",
+  "MailboxSettings.ReadWrite",
   "Calendars.ReadWrite",
 ].join(" ");
 
@@ -36,7 +38,11 @@ async function getOutlookIntegration(userId: string) {
   };
 }
 
-async function refreshOutlookToken(userId: string, outlook: OutlookIntegration, integrations: Record<string, unknown>) {
+async function refreshOutlookToken(
+  userId: string,
+  outlook: OutlookIntegration,
+  integrations: Record<string, unknown>
+) {
   if (!outlook.refreshToken) return outlook.accessToken || null;
 
   const needsRefresh = !outlook.expiresAt || outlook.expiresAt < Date.now() + 60_000;
@@ -80,13 +86,15 @@ async function refreshOutlookToken(userId: string, outlook: OutlookIntegration, 
   return updated.accessToken as string;
 }
 
-async function graphFetch(token: string, path: string, init?: RequestInit) {
+async function graphFetch(token: string, path: string, init?: RequestInit & { preferTextBody?: boolean }) {
+  const { preferTextBody, ...fetchInit } = init || {};
   const res = await fetch(`https://graph.microsoft.com/v1.0${path}`, {
-    ...init,
+    ...fetchInit,
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
-      ...(init?.headers || {}),
+      ...(preferTextBody ? { Prefer: 'outlook.body-content-type="text"' } : {}),
+      ...(fetchInit.headers || {}),
     },
   });
   const text = await res.text();
@@ -100,6 +108,40 @@ async function graphFetch(token: string, path: string, init?: RequestInit) {
 function mcpText(payload: unknown) {
   return {
     content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
+  };
+}
+
+function mapMessage(m: {
+  id: string;
+  conversationId?: string;
+  subject?: string;
+  from?: { emailAddress?: { name?: string; address?: string } };
+  receivedDateTime?: string;
+  bodyPreview?: string;
+  body?: { content?: string; contentType?: string };
+  isRead?: boolean;
+  isDraft?: boolean;
+  categories?: string[];
+  internetMessageId?: string;
+}) {
+  const address = m.from?.emailAddress?.address || "";
+  const name = m.from?.emailAddress?.name || "";
+  const from = name && address ? `${name} <${address}>` : name || address || "Unknown";
+  return {
+    id: m.id,
+    conversationId: m.conversationId || "",
+    threadId: m.conversationId || "",
+    subject: m.subject || "(no subject)",
+    from,
+    email: address,
+    date: m.receivedDateTime,
+    snippet: m.bodyPreview || "",
+    body: m.body?.content || m.bodyPreview || "",
+    isRead: !!m.isRead,
+    isDraft: !!m.isDraft,
+    categories: m.categories || [],
+    labels: m.categories || [],
+    rfcMessageId: m.internetMessageId || undefined,
   };
 }
 
@@ -158,29 +200,152 @@ export async function POST(req: NextRequest) {
 
     switch (method) {
       case "outlook_list_messages": {
-        const maxResults = Number(params?.maxResults || 15);
-        const data = await graphFetch(
+        const maxResults = Math.min(Number(params?.maxResults || 15), 25);
+        const includeBody = params?.includeBody === true;
+        const folder = String(params?.folder || "inbox");
+        const select = [
+          "id",
+          "conversationId",
+          "subject",
+          "from",
+          "receivedDateTime",
+          "bodyPreview",
+          "isRead",
+          "isDraft",
+          "categories",
+          "internetMessageId",
+          ...(includeBody ? ["body"] : []),
+        ].join(",");
+        const path =
+          folder === "inbox"
+            ? `/me/mailFolders/inbox/messages?$top=${maxResults}&$select=${select}&$orderby=receivedDateTime desc`
+            : `/me/messages?$top=${maxResults}&$select=${select}&$orderby=receivedDateTime desc`;
+        const data = await graphFetch(token, path, { preferTextBody: includeBody });
+        result = mcpText({
+          messages: (data.value || []).map(mapMessage),
+        });
+        break;
+      }
+
+      case "outlook_get_message": {
+        const messageId = params?.id;
+        if (!messageId) {
+          error = { code: -32602, message: "Argument 'id' is required" };
+          break;
+        }
+        const detail = await graphFetch(
           token,
-          `/me/messages?$top=${maxResults}&$select=id,subject,from,receivedDateTime,bodyPreview,isRead&$orderby=receivedDateTime desc`
+          `/me/messages/${encodeURIComponent(messageId)}?$select=id,conversationId,subject,from,receivedDateTime,bodyPreview,body,isRead,isDraft,categories,internetMessageId`,
+          { preferTextBody: true }
+        );
+        result = mcpText(mapMessage(detail));
+        break;
+      }
+
+      case "outlook_ensure_categories": {
+        const defs = (params?.categories || []) as Array<{
+          name: string;
+          color?: string;
+        }>;
+        const existing = await graphFetch(token, "/me/outlook/masterCategories");
+        const byName = new Map<string, string>(
+          (existing.value || []).map((c: { displayName?: string; id?: string }) => [
+            String(c.displayName || ""),
+            String(c.id || ""),
+          ])
+        );
+        const categoryIds: Record<string, string> = {};
+        for (const def of defs) {
+          if (!def.name) continue;
+          const found = byName.get(def.name);
+          if (found) {
+            categoryIds[def.name] = found;
+            continue;
+          }
+          const created = await graphFetch(token, "/me/outlook/masterCategories", {
+            method: "POST",
+            body: JSON.stringify({
+              displayName: def.name,
+              color: def.color || "preset0",
+            }),
+          });
+          categoryIds[def.name] = created.id;
+          byName.set(def.name, created.id);
+        }
+        result = mcpText({ categoryIds, categories: Object.keys(categoryIds) });
+        break;
+      }
+
+      case "outlook_set_categories": {
+        const messageId = params?.messageId as string | undefined;
+        const add = (params?.addCategories || []) as string[];
+        const remove = (params?.removeCategories || []) as string[];
+        if (!messageId) {
+          error = { code: -32602, message: "Argument 'messageId' is required" };
+          break;
+        }
+        const current = await graphFetch(
+          token,
+          `/me/messages/${encodeURIComponent(messageId)}?$select=id,categories`
+        );
+        const set = new Set<string>((current.categories || []) as string[]);
+        for (const c of add) if (c) set.add(c);
+        for (const c of remove) set.delete(c);
+        const categories = Array.from(set);
+        await graphFetch(token, `/me/messages/${encodeURIComponent(messageId)}`, {
+          method: "PATCH",
+          body: JSON.stringify({ categories }),
+        });
+        result = mcpText({ success: true, messageId, categories });
+        break;
+      }
+
+      case "outlook_create_reply_draft": {
+        const messageId = params?.messageId as string | undefined;
+        const body = String(params?.body || "");
+        if (!messageId) {
+          error = { code: -32602, message: "Argument 'messageId' is required" };
+          break;
+        }
+        if (!body.trim()) {
+          error = { code: -32602, message: "Argument 'body' is required" };
+          break;
+        }
+        // createReply with comment sets the reply text; never sends.
+        const draft = await graphFetch(
+          token,
+          `/me/messages/${encodeURIComponent(messageId)}/createReply`,
+          {
+            method: "POST",
+            body: JSON.stringify({ comment: body }),
+          }
         );
         result = mcpText({
-          messages: (data.value || []).map((m: {
-            id: string;
-            subject?: string;
-            from?: { emailAddress?: { name?: string; address?: string } };
-            receivedDateTime?: string;
-            bodyPreview?: string;
-            isRead?: boolean;
-          }) => ({
-            id: m.id,
-            subject: m.subject || "(no subject)",
-            from: m.from?.emailAddress?.name || m.from?.emailAddress?.address || "Unknown",
-            email: m.from?.emailAddress?.address || "",
-            date: m.receivedDateTime,
-            snippet: m.bodyPreview || "",
-            isRead: !!m.isRead,
-          })),
+          success: true,
+          draft: {
+            id: draft.id,
+            conversationId: draft.conversationId,
+            subject: draft.subject,
+            webLink: draft.webLink,
+          },
         });
+        break;
+      }
+
+      case "outlook_conversation_has_draft": {
+        const conversationId = params?.conversationId as string | undefined;
+        if (!conversationId) {
+          error = { code: -32602, message: "Argument 'conversationId' is required" };
+          break;
+        }
+        // Escape single quotes for OData string literal
+        const escaped = conversationId.replace(/'/g, "''");
+        const data = await graphFetch(
+          token,
+          `/me/mailFolders/drafts/messages?$filter=conversationId eq '${escaped}'&$top=1&$select=id,conversationId,isDraft`
+        );
+        const drafts = data.value || [];
+        result = mcpText({ hasDraft: drafts.length > 0, draftId: drafts[0]?.id || null });
         break;
       }
 
@@ -195,21 +360,23 @@ export async function POST(req: NextRequest) {
           `/me/calendarView?startDateTime=${encodeURIComponent(timeMin)}&endDateTime=${encodeURIComponent(timeMax)}&$top=20&$orderby=start/dateTime`
         );
         result = mcpText({
-          events: (data.value || []).map((e: {
-            id: string;
-            subject?: string;
-            start?: { dateTime?: string; date?: string };
-            end?: { dateTime?: string; date?: string };
-            location?: { displayName?: string };
-            isOnlineMeeting?: boolean;
-          }) => ({
-            id: e.id,
-            title: e.subject || "(no title)",
-            start: e.start?.dateTime || e.start?.date,
-            end: e.end?.dateTime || e.end?.date,
-            location: e.location?.displayName || "",
-            isOnlineMeeting: !!e.isOnlineMeeting,
-          })),
+          events: (data.value || []).map(
+            (e: {
+              id: string;
+              subject?: string;
+              start?: { dateTime?: string; date?: string };
+              end?: { dateTime?: string; date?: string };
+              location?: { displayName?: string };
+              isOnlineMeeting?: boolean;
+            }) => ({
+              id: e.id,
+              title: e.subject || "(no title)",
+              start: e.start?.dateTime || e.start?.date,
+              end: e.end?.dateTime || e.end?.date,
+              location: e.location?.displayName || "",
+              isOnlineMeeting: !!e.isOnlineMeeting,
+            })
+          ),
         });
         break;
       }
@@ -218,20 +385,29 @@ export async function POST(req: NextRequest) {
         const summary = params?.summary;
         const start = params?.start;
         const end = params?.end;
+        const timeZone = String(params?.timeZone || "UTC");
         if (!summary || !start || !end) {
           error = { code: -32602, message: "Arguments 'summary', 'start', and 'end' are required" };
           break;
         }
+        // Graph expects local wall-clock in dateTime + IANA/Windows timeZone (UTC ok).
+        const startDt = String(start).replace(/Z$/i, "").replace(/([+-]\d{2}:\d{2})$/, "");
+        const endDt = String(end).replace(/Z$/i, "").replace(/([+-]\d{2}:\d{2})$/, "");
         const created = await graphFetch(token, "/me/events", {
           method: "POST",
           body: JSON.stringify({
             subject: summary,
-            start: { dateTime: start, timeZone: "UTC" },
-            end: { dateTime: end, timeZone: "UTC" },
+            start: { dateTime: startDt, timeZone },
+            end: { dateTime: endDt, timeZone },
             body: {
               contentType: "Text",
               content: params?.description || "",
             },
+            isReminderOn: params?.isReminderOn !== false,
+            reminderMinutesBeforeStart:
+              typeof params?.reminderMinutesBeforeStart === "number"
+                ? params.reminderMinutesBeforeStart
+                : 30,
           }),
         });
         result = mcpText({
@@ -239,6 +415,8 @@ export async function POST(req: NextRequest) {
           id: created.id,
           title: created.subject,
           webLink: created.webLink,
+          start: created.start,
+          end: created.end,
         });
         break;
       }
