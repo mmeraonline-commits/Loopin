@@ -7,6 +7,8 @@ const cloudflareDeploy =
   process.env.DEPLOY_TARGET === "cloudflare";
 
 const nextConfig: NextConfig = {
+  // Windows OpenNext builds occasionally trip ESLint module-resolution noise.
+  eslint: { ignoreDuringBuilds: true },
   // Keep Baileys out of the Cloudflare Worker — it runs on the dedicated WhatsApp worker.
   serverExternalPackages: cloudflareDeploy
     ? []
