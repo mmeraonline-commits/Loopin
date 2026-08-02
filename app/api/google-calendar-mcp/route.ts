@@ -225,12 +225,14 @@ export async function POST(req: NextRequest) {
         }
 
         if (isSimulated) {
+          const simId = `gcal_sim_${Date.now()}`;
           result = mcpText({
             success: true,
-            id: `gcal_sim_${Date.now()}`,
+            id: simId,
             title: summary,
             start,
             end,
+            htmlLink: `https://calendar.google.com/calendar/event?eid=${encodeURIComponent(simId)}`,
             simulated: true,
           });
           break;

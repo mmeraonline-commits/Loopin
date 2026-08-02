@@ -368,6 +368,7 @@ export async function POST(req: NextRequest) {
               end?: { dateTime?: string; date?: string };
               location?: { displayName?: string };
               isOnlineMeeting?: boolean;
+              webLink?: string;
             }) => ({
               id: e.id,
               title: e.subject || "(no title)",
@@ -375,6 +376,7 @@ export async function POST(req: NextRequest) {
               end: e.end?.dateTime || e.end?.date,
               location: e.location?.displayName || "",
               isOnlineMeeting: !!e.isOnlineMeeting,
+              webLink: e.webLink || "",
             })
           ),
         });

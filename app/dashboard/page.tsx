@@ -918,13 +918,21 @@ function DashboardOverviewPanel({ user }: { user: any }) {
    AI AGENT PANEL (Interactive mini chat)
    ========================================== */
 function AiAgentPanel({ user }: { user: any }) {
-  const [messages, setMessages] = useState<Array<{
+  type ChatActionResult = {
+    ok: boolean;
+    error?: string;
+    result?: unknown;
+    tool?: string;
+  };
+  type ChatMessage = {
     sender: "user" | "agent";
     text: string;
     isStreaming?: boolean;
     suggestions?: string[];
     pendingAction?: { tool: string; params: Record<string, unknown> } | null;
-  }>>([]);
+    actionResult?: ChatActionResult | null;
+  };
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [briefData, setBriefData] = useState<any>(null);
@@ -1014,11 +1022,21 @@ function AiAgentPanel({ user }: { user: any }) {
   }, [user?.id]);
 
   // 3. Typing Effect streaming emulator
-  const streamMessage = (fullText: string, suggestions: string[] = []) => {
+  const streamMessage = (
+    fullText: string,
+    suggestions: string[] = [],
+    actionResult?: ChatActionResult | null
+  ) => {
     setLoading(false);
     setMessages((prev) => [
       ...prev,
-      { sender: "agent", text: "", isStreaming: true, suggestions }
+      {
+        sender: "agent",
+        text: "",
+        isStreaming: true,
+        suggestions,
+        ...(actionResult ? { actionResult } : {}),
+      }
     ]);
 
     let currentText = "";
@@ -1042,6 +1060,7 @@ function AiAgentPanel({ user }: { user: any }) {
           const last = next[next.length - 1];
           if (last && last.sender === "agent") {
             last.isStreaming = false;
+            if (actionResult) last.actionResult = actionResult;
           }
           return next;
         });
@@ -1059,6 +1078,12 @@ function AiAgentPanel({ user }: { user: any }) {
         userText.trim()
       );
 
+    const recentMessages = messages.slice(-10);
+    const recentActionResults = recentMessages
+      .filter((m) => m.actionResult?.ok && m.actionResult?.tool)
+      .map((m) => m.actionResult as ChatActionResult)
+      .slice(-5);
+
     try {
       const res = await fetch("/api/ai-chat", {
         method: "POST",
@@ -1066,7 +1091,12 @@ function AiAgentPanel({ user }: { user: any }) {
         body: JSON.stringify({
           userId: user?.id,
           prompt: userText,
-          history: messages.slice(-10),
+          history: recentMessages.map((m) => ({
+            sender: m.sender,
+            text: m.text,
+            ...(m.actionResult ? { actionResult: m.actionResult } : {}),
+          })),
+          recentActionResults,
           confirmedAction: shouldConfirm && pendingAction ? pendingAction : null,
         })
       });
@@ -1078,7 +1108,7 @@ function AiAgentPanel({ user }: { user: any }) {
         } else if (data.actionResult || shouldConfirm) {
           setPendingAction(null);
         }
-        streamMessage(data.response, data.suggestions || []);
+        streamMessage(data.response, data.suggestions || [], data.actionResult || null);
       } else {
         const errorText = await res.text();
         console.error("Chat error:", errorText);
@@ -1148,6 +1178,7 @@ function AiAgentPanel({ user }: { user: any }) {
           text: "Hello! I am your Loopin cognitive personal assistant. I monitor your connected Gmail, WhatsApp, and Telegram in real-time. Ask me to draft email replies, fetch summaries, or list your action items."
         }
       ];
+      setPendingAction(null);
       setMessages(initial);
       localStorage.setItem(
         "omnisync_chat_history",

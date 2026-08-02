@@ -33,7 +33,13 @@ async function fetchMcpText(origin: string, path: string, body: Record<string, u
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId, prompt, history = [], confirmedAction = null } = await req.json();
+    const {
+      userId,
+      prompt,
+      history = [],
+      confirmedAction = null,
+      recentActionResults = [],
+    } = await req.json();
 
     if (!userId) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
@@ -188,7 +194,7 @@ export async function POST(req: NextRequest) {
         outlookCalendarSummary = calendar.events
           .map(
             (e: any) =>
-              `Title: ${e.title}\nStart: ${e.start}\nEnd: ${e.end}\nLocation: ${e.location || "n/a"}\nOnline: ${e.isOnlineMeeting ? "yes" : "no"}\nID: ${e.id}`
+              `Title: ${e.title}\nStart: ${e.start}\nEnd: ${e.end}\nLocation: ${e.location || "n/a"}\nOnline: ${e.isOnlineMeeting ? "yes" : "no"}\nLink: ${e.htmlLink || e.webLink || "n/a"}\nID: ${e.id}`
           )
           .join("\n---\n");
       } else {
@@ -209,7 +215,7 @@ export async function POST(req: NextRequest) {
         googleCalendarSummary = calendar.events
           .map(
             (e: any) =>
-              `Title: ${e.title}\nStart: ${e.start}\nEnd: ${e.end}\nLocation: ${e.location || "n/a"}\nID: ${e.id}`
+              `Title: ${e.title}\nStart: ${e.start}\nEnd: ${e.end}\nLocation: ${e.location || "n/a"}\nLink: ${e.htmlLink || e.webLink || "n/a"}\nID: ${e.id}`
           )
           .join("\n---\n");
       } else {
@@ -305,15 +311,70 @@ export async function POST(req: NextRequest) {
     }
 
     const ai = new GoogleGenAI({ apiKey });
-    const formattedHistory = history.map((h: any) => ({
-      role: h.sender === "user" ? "user" : "model",
-      parts: [{ text: h.text }],
-    }));
+
+    const formatActionResultLine = (ar: {
+      ok?: boolean;
+      tool?: string;
+      result?: unknown;
+      error?: string;
+    }) => {
+      if (!ar?.tool) return "";
+      if (!ar.ok) return `Last action: ${ar.tool} → FAILED: ${ar.error || "unknown"}`;
+      const result = (ar.result && typeof ar.result === "object" ? ar.result : {}) as Record<
+        string,
+        unknown
+      >;
+      const link =
+        (typeof result.htmlLink === "string" && result.htmlLink) ||
+        (typeof result.webLink === "string" && result.webLink) ||
+        "";
+      const title =
+        (typeof result.title === "string" && result.title) ||
+        (typeof result.summary === "string" && result.summary) ||
+        "";
+      const extras = [
+        title ? `title: ${title}` : "",
+        link ? (result.htmlLink ? `htmlLink: ${link}` : `webLink: ${link}`) : "",
+      ]
+        .filter(Boolean)
+        .join(", ");
+      return extras
+        ? `Last action: ${ar.tool} → ${extras}`
+        : `Last action: ${ar.tool} → ${JSON.stringify(ar.result)}`;
+    };
+
+    const formattedHistory = history.map((h: any) => {
+      let text = String(h.text || "");
+      if (h.actionResult && typeof h.actionResult === "object") {
+        const line = formatActionResultLine(h.actionResult);
+        if (line) text = `${text}\n[${line}]`;
+      }
+      return {
+        role: h.sender === "user" ? "user" : "model",
+        parts: [{ text }],
+      };
+    });
     formattedHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+    const priorResults = [
+      ...(Array.isArray(recentActionResults) ? recentActionResults : []),
+      ...history
+        .filter((h: any) => h?.actionResult && typeof h.actionResult === "object")
+        .map((h: any) => h.actionResult),
+    ]
+      .filter((ar: any) => ar?.ok && ar?.tool)
+      .slice(-5);
+    const priorActionContext =
+      priorResults.length > 0
+        ? `\n\nRECENT ACTION RESULTS (from this chat session — reuse calendar links when the user asks to share/send "the event/reminder/link"):\n${priorResults
+            .map((ar: any) => formatActionResultLine(ar))
+            .filter(Boolean)
+            .join("\n")}`
+        : "";
 
     const actionNote = actionReceipt
       ? actionReceipt.ok
-        ? `\n\nSYSTEM ACTION RESULT (authoritative): Successfully executed ${actionReceipt.tool}. Result: ${JSON.stringify(actionReceipt.result)}. You MUST tell the user it succeeded and include key details from the result (message sent, or Outlook event title/link/time). Do NOT invent success details.`
+        ? `\n\nSYSTEM ACTION RESULT (authoritative): Successfully executed ${actionReceipt.tool}. Result: ${JSON.stringify(actionReceipt.result)}. You MUST tell the user it succeeded and include key details from the result (message sent, or calendar event title/time, and always echo Google htmlLink or Outlook webLink when present). Do NOT invent success details.`
         : `\n\nSYSTEM ACTION RESULT (authoritative): Failed to execute ${actionReceipt.tool}: ${actionReceipt.error}. You MUST tell the user it failed and show this error. Do NOT claim success.`
       : `\n\nSYSTEM ACTION RESULT: none yet.`;
 
@@ -360,7 +421,7 @@ ${linkedinSummary}
 
 === Calendly ===
 ${calendlySummary}
-${actionNote}
+${actionNote}${priorActionContext}
 
 CRITICAL ACTION RULES:
 1. You CANNOT send messages or create calendar events by yourself. Draft first; a real tool runs only after user confirm.
@@ -386,6 +447,7 @@ CRITICAL ACTION RULES:
    Use the user's timezone (${prefs.timezone}). Prefer a short timed block (e.g. 15–30 minutes) near the deadline they mentioned. Do NOT invent that Outlook calendar is unavailable — the tool exists when Outlook is connected.
 16. To refresh/list Outlook calendar beyond the synced window, use "outlook_list_events" with optional timeMin/timeMax (ISO). Still require confirm before running.
 17. For Google Calendar use "google_calendar_create_event" with the same shape as Outlook create (summary/start/end/timeZone/description). List with "google_calendar_list_events".
+18. If the user asks to share/send "the event", "the reminder", "the link", or similar after a calendar create in this chat, reuse the last known Google htmlLink or Outlook webLink from SYSTEM ACTION RESULT / RECENT ACTION RESULTS when drafting gmail/whatsapp/telegram/teams (or other) sends. Still draft + confirm before sending. Do not invent links.
 
 Return EXACT JSON:
 {
