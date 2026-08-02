@@ -3,11 +3,14 @@ export type PlanId = "starter" | "pro" | "business" | "team";
 export type ChannelId =
   | "gmail"
   | "whatsapp"
+  | "telegram"
   | "slack"
   | "discord"
   | "outlook"
   | "linkedin"
-  | "calendly";
+  | "calendly"
+  | "google_calendar"
+  | "teams";
 
 export type SurfaceId = "inbox" | "aiAgent" | "alerts" | "briefing" | "followUps";
 
@@ -43,11 +46,14 @@ export type PlanDefinition = {
 const ALL_CHANNELS: ChannelId[] = [
   "gmail",
   "whatsapp",
+  "telegram",
   "slack",
   "discord",
+  "teams",
   "outlook",
   "linkedin",
   "calendly",
+  "google_calendar",
 ];
 
 export const PLAN_ORDER: PlanId[] = ["starter", "pro", "business", "team"];
@@ -58,9 +64,9 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     name: "Starter",
     priceMonthly: 14,
     priceLabel: "$14",
-    description: "Gmail + WhatsApp with daily briefs and capped sends",
+    description: "Gmail + WhatsApp/Telegram with daily briefs and capped sends",
     seats: { min: 1, max: 1, default: 1 },
-    channels: ["gmail", "whatsapp"],
+    channels: ["gmail", "whatsapp", "telegram"],
     surfaces: {
       inbox: false,
       aiAgent: false,
@@ -79,7 +85,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
       sendsPerMonth: 20,
     },
     featureBullets: [
-      "Gmail + WhatsApp",
+      "Gmail + WhatsApp + Telegram",
       "Daily AI briefing",
       "Draft & send replies (confirm-before-send)",
       "Label & sort emails",
@@ -95,7 +101,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     priceLabel: "$39",
     description: "Add Slack/Discord, AI Agent, inbox, and alert rules",
     seats: { min: 1, max: 1, default: 1 },
-    channels: ["gmail", "whatsapp", "slack", "discord"],
+    channels: ["gmail", "whatsapp", "telegram", "slack", "discord", "teams"],
     surfaces: {
       inbox: true,
       aiAgent: true,
@@ -115,7 +121,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     },
     featureBullets: [
       "Everything in Starter",
-      "+ Slack + Discord",
+      "+ Slack + Discord + Teams",
       "Conversation mode (AI Agent)",
       "Unified inbox & reply",
       "10 custom alert rules",
@@ -151,7 +157,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
       "Everything in Pro",
       "Out-of-office & after-hours replies",
       "Tone training — Advanced (docs, URLs, text)",
-      "All channels + Outlook + Calendly",
+      "All channels + Outlook + Calendly + Google Calendar",
       "Unlimited alert rules",
       "500 AI actions / month",
       "Priority support",
@@ -253,11 +259,14 @@ export function channelLabel(channel: ChannelId): string {
   const labels: Record<ChannelId, string> = {
     gmail: "Gmail",
     whatsapp: "WhatsApp",
+    telegram: "Telegram",
     slack: "Slack",
     discord: "Discord",
+    teams: "Microsoft Teams",
     outlook: "Outlook",
     linkedin: "LinkedIn",
     calendly: "Calendly",
+    google_calendar: "Google Calendar",
   };
   return labels[channel];
 }

@@ -103,10 +103,10 @@ export function OnboardingGuideBanner({ user }: { user: UserLike }) {
 
   const steps: OnboardingStep[] = useMemo(() => {
     const integrations = user?.integrations || {};
-    const connectedCount = ["gmail", "whatsapp", "slack", "discord", "linkedin", "calendly", "outlook"].filter(
+    const connectedCount = ["gmail", "whatsapp", "telegram", "slack", "discord", "linkedin", "calendly", "outlook", "google_calendar"].filter(
       (id) => isLive(integrations, id)
     ).length;
-    const hasMessaging = ["whatsapp", "slack", "discord"].some((id) => isLive(integrations, id));
+    const hasMessaging = ["whatsapp", "telegram", "slack", "discord"].some((id) => isLive(integrations, id));
 
     return [
       {

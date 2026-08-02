@@ -86,8 +86,8 @@ export async function POST(req: NextRequest) {
 
     let scheduleName = `Daily Briefing — ${format(new Date(), "MMM d, yyyy")}`;
     let scheduleDesc = "Your daily communication digest and action items summary.";
-    let categories = ["email", "messages", "mentions", "tasks", "follow_ups"];
-    let apps = ["gmail", "whatsapp", "slack", "outlook"];
+    let categories = ["email", "messages", "calendar", "mentions", "tasks", "follow_ups"];
+    let apps = ["gmail", "whatsapp", "telegram", "slack", "outlook", "google_calendar"];
 
     // 1. Load custom schedule config if provided
     if (scheduleId) {
@@ -115,13 +115,18 @@ export async function POST(req: NextRequest) {
     const integrations = userRow?.integrations || {};
     const hasGmail = !!integrations.gmail?.connected;
     const hasWhatsApp = !!integrations.whatsapp?.connected;
+    const hasTelegram = !!integrations.telegram?.connected;
     const hasSlack = !!integrations.slack?.connected && !integrations.slack?.isSimulated;
     const hasOutlook = !!integrations.outlook?.connected && !integrations.outlook?.isSimulated;
+    const hasGoogleCalendar =
+      !!integrations.google_calendar?.connected && !integrations.google_calendar?.isSimulated;
 
     let gmailMessages: any[] = [];
     let whatsappMessages: any[] = [];
+    let telegramMessages: any[] = [];
     let slackMessages: any[] = [];
     let outlookMessages: any[] = [];
+    let calendarEvents: any[] = [];
     let connectedAppsUsed: string[] = [];
 
     // 3. Fetch real Gmail data
@@ -175,6 +180,29 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    if (apps.includes("telegram") && hasTelegram) {
+      try {
+        const tgRes = await fetch(`${origin}/api/telegram-mcp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            method: "telegram_get_recent_messages",
+            userId,
+          }),
+        });
+        if (tgRes.ok) {
+          const resJson = await tgRes.json();
+          const text = resJson.result?.content?.[0]?.text;
+          if (text) {
+            telegramMessages = JSON.parse(text).messages || [];
+            if (telegramMessages.length > 0) connectedAppsUsed.push("Telegram");
+          }
+        }
+      } catch (e) {
+        console.error("[Briefings] Telegram fetch failed:", e);
+      }
+    }
+
     if (apps.includes("slack") && hasSlack) {
       try {
         const slackRes = await fetch(`${origin}/api/slack-mcp`, {
@@ -224,11 +252,71 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Calendar events (Google Calendar + Outlook calendar)
+    if ((apps.includes("google_calendar") || categories.includes("calendar")) && hasGoogleCalendar) {
+      try {
+        const gcalRes = await fetch(`${origin}/api/google-calendar-mcp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            method: "google_calendar_list_events",
+            params: {
+              timeMin: new Date().toISOString(),
+              timeMax: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            },
+            userId,
+          }),
+        });
+        if (gcalRes.ok) {
+          const resJson = await gcalRes.json();
+          const text = resJson.result?.content?.[0]?.text;
+          if (text) {
+            const events = JSON.parse(text).events || [];
+            calendarEvents.push(
+              ...events.map((e: any) => ({ ...e, app: "google_calendar" }))
+            );
+            if (events.length > 0) connectedAppsUsed.push("Google Calendar");
+          }
+        }
+      } catch (e) {
+        console.error("[Briefings] Google Calendar fetch failed:", e);
+      }
+    }
+
+    if ((apps.includes("outlook") || categories.includes("calendar")) && hasOutlook) {
+      try {
+        const calRes = await fetch(`${origin}/api/outlook-mcp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            method: "outlook_list_events",
+            params: {
+              timeMin: new Date().toISOString(),
+              timeMax: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            },
+            userId,
+          }),
+        });
+        if (calRes.ok) {
+          const resJson = await calRes.json();
+          const text = resJson.result?.content?.[0]?.text;
+          if (text) {
+            const events = JSON.parse(text).events || [];
+            calendarEvents.push(...events.map((e: any) => ({ ...e, app: "outlook" })));
+          }
+        }
+      } catch (e) {
+        console.error("[Briefings] Outlook calendar fetch failed:", e);
+      }
+    }
+
     const hasAnyData =
       gmailMessages.length > 0 ||
       whatsappMessages.length > 0 ||
+      telegramMessages.length > 0 ||
       slackMessages.length > 0 ||
-      outlookMessages.length > 0;
+      outlookMessages.length > 0 ||
+      calendarEvents.length > 0;
     const geminiApiKey = process.env.GEMINI_API_KEY;
 
     // 5. Generate with Gemini using real data
@@ -252,11 +340,17 @@ ${JSON.stringify(gmailMessages, null, 2)}
 --- REAL WHATSAPP MESSAGES (${whatsappMessages.length} messages) ---
 ${JSON.stringify(whatsappMessages, null, 2)}
 
+--- REAL TELEGRAM MESSAGES (${telegramMessages.length} messages) ---
+${JSON.stringify(telegramMessages, null, 2)}
+
 --- REAL SLACK MESSAGES (${slackMessages.length} messages) ---
 ${JSON.stringify(slackMessages, null, 2)}
 
 --- REAL OUTLOOK INBOX (${outlookMessages.length} messages) ---
 ${JSON.stringify(outlookMessages, null, 2)}
+
+--- CALENDAR EVENTS (${calendarEvents.length} events) ---
+${JSON.stringify(calendarEvents, null, 2)}
 
 Analyze the REAL data above carefully. Produce a valid JSON briefing:
 {
@@ -265,13 +359,15 @@ Analyze the REAL data above carefully. Produce a valid JSON briefing:
   "stats": {
     "email": <count of actual email items>,
     "messages": <count of actual message items>,
+    "calendar": <count of calendar events>,
     "mentions": <count of actual mention items>,
     "tasks": <count of extracted tasks>,
     "follow_ups": <count of follow-up items>
   },
   "data": {
     "email": [{ "id": "string", "app": "gmail" | "outlook", "from": "string", "subject": "string", "snippet": "string", "time": "string", "body": "string" }],
-    "messages": [{ "id": "string", "app": "whatsapp" | "slack", "from": "string", "snippet": "string", "time": "string", "body": "string" }],
+    "messages": [{ "id": "string", "app": "whatsapp" | "telegram" | "slack", "from": "string", "snippet": "string", "time": "string", "body": "string" }],
+    "calendar": [{ "id": "string", "app": "google_calendar" | "outlook", "title": "string", "start": "string", "end": "string", "location": "string" }],
     "mentions": [{ "id": "string", "app": "string", "from": "string", "snippet": "string", "time": "string", "body": "string" }],
     "tasks": [{ "id": "string", "app": "string", "title": "string", "description": "string", "time": "string", "priority": "High" | "Medium" | "Low" }],
     "follow_ups": [{ "id": "string", "app": "string", "title": "string", "description": "string", "time": "string" }]
@@ -371,6 +467,14 @@ RULES:
         time: msg.timestamp ? format(new Date(msg.timestamp), "h:mm a") : "",
         body: msg.body || ""
       })),
+      ...telegramMessages.map((msg: any, i: number) => ({
+        id: msg.id || `tg_${i}`,
+        app: "telegram",
+        from: msg.from || msg.chatName || "Unknown",
+        snippet: msg.body || "",
+        time: msg.timestamp ? format(new Date(msg.timestamp), "h:mm a") : "",
+        body: msg.body || "",
+      })),
       ...slackMessages.map((msg: any, i: number) => ({
         id: `slack_${i}`,
         app: "slack",
@@ -381,17 +485,26 @@ RULES:
       })),
     ];
 
+    const calendarItems = calendarEvents.map((e: any, i: number) => ({
+      id: e.id || `cal_${i}`,
+      app: e.app || "google_calendar",
+      title: e.title || "(no title)",
+      start: e.start || "",
+      end: e.end || "",
+      location: e.location || "",
+    }));
+
     const noGeminiTitle = hasAnyData
       ? `${scheduleName}`
       : `${scheduleName} — No new activity`;
 
     const noGeminiSummary = hasAnyData
-      ? `${emailItems.length} email${emailItems.length !== 1 ? "s" : ""} and ${messageItems.length} message${messageItems.length !== 1 ? "s" : ""} from your connected apps. Review the categories below for details.`
+      ? `${emailItems.length} email${emailItems.length !== 1 ? "s" : ""}, ${messageItems.length} message${messageItems.length !== 1 ? "s" : ""}, and ${calendarItems.length} calendar event${calendarItems.length !== 1 ? "s" : ""} from your connected apps. Review the categories below for details.`
       : "No new messages or emails found in your connected apps at this time.";
 
-    if (!hasGmail && !hasWhatsApp && !hasSlack && !hasOutlook) {
+    if (!hasGmail && !hasWhatsApp && !hasTelegram && !hasSlack && !hasOutlook && !hasGoogleCalendar) {
       return NextResponse.json(
-        { error: "No connected apps. Please connect Gmail, WhatsApp, Slack, or Outlook from Integrations." },
+        { error: "No connected apps. Please connect channels from Integrations." },
         { status: 400 }
       );
     }
@@ -406,6 +519,7 @@ RULES:
         stats: {
           email: emailItems.length,
           messages: messageItems.length,
+          calendar: calendarItems.length,
           mentions: 0,
           tasks: 0,
           follow_ups: 0
@@ -413,6 +527,7 @@ RULES:
         data: {
           email: emailItems,
           messages: messageItems,
+          calendar: calendarItems,
           mentions: [],
           tasks: [],
           follow_ups: []

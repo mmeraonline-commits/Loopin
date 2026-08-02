@@ -65,7 +65,9 @@ const PLATFORM_FILTERS = [
   { key: "gmail", label: "Gmail" },
   { key: "outlook", label: "Outlook" },
   { key: "whatsapp", label: "WhatsApp" },
+  { key: "telegram", label: "Telegram" },
   { key: "slack", label: "Slack" },
+  { key: "teams", label: "Teams" },
   { key: "discord", label: "Discord" },
 ] as const;
 

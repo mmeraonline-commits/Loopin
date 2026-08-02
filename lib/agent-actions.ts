@@ -9,6 +9,10 @@ const SEND_TOOLS = new Set([
   "slack_post_message",
   "gmail_send_message",
   "whatsapp_send_message",
+  "telegram_send_message",
+  "telegram_reply_message",
+  "teams_send_message",
+  "teams_reply_message",
   "linkedin_post_share",
 ]);
 
@@ -23,6 +27,10 @@ const ALLOWED_TOOLS = new Set([
   "slack_post_message",
   "gmail_send_message",
   "whatsapp_send_message",
+  "telegram_send_message",
+  "telegram_reply_message",
+  "teams_send_message",
+  "teams_reply_message",
   "linkedin_post_share",
   "calendly_cancel_event",
   "calendly_create_booking",
@@ -30,6 +38,8 @@ const ALLOWED_TOOLS = new Set([
   "calendly_enable_webhooks",
   "outlook_create_event",
   "outlook_list_events",
+  "google_calendar_list_events",
+  "google_calendar_create_event",
 ]);
 
 const TOOL_ROUTES: Record<string, string> = {
@@ -38,6 +48,10 @@ const TOOL_ROUTES: Record<string, string> = {
   slack_post_message: "/api/slack-mcp",
   gmail_send_message: "/api/gmail-mcp",
   whatsapp_send_message: "/api/whatsapp-mcp",
+  telegram_send_message: "/api/telegram-mcp",
+  telegram_reply_message: "/api/telegram-mcp",
+  teams_send_message: "/api/teams-mcp",
+  teams_reply_message: "/api/teams-mcp",
   linkedin_post_share: "/api/linkedin-mcp",
   calendly_cancel_event: "/api/calendly-mcp",
   calendly_create_booking: "/api/calendly-mcp",
@@ -45,6 +59,8 @@ const TOOL_ROUTES: Record<string, string> = {
   calendly_enable_webhooks: "/api/calendly-mcp",
   outlook_create_event: "/api/outlook-mcp",
   outlook_list_events: "/api/outlook-mcp",
+  google_calendar_list_events: "/api/google-calendar-mcp",
+  google_calendar_create_event: "/api/google-calendar-mcp",
 };
 
 export function isConfirmPrompt(text: string) {
@@ -83,6 +99,22 @@ export async function executeAgentAction(
   }
   if (action.tool === "whatsapp_send_message") {
     if (!params.to && params.chatId) params.to = params.chatId;
+  }
+  if (action.tool === "telegram_send_message" || action.tool === "telegram_reply_message") {
+    if (!params.chatId && params.to) params.chatId = params.to;
+    if (!params.text && params.body) params.text = params.body;
+    if (!params.text && params.content) params.text = params.content;
+  }
+  if (action.tool === "teams_send_message" || action.tool === "teams_reply_message") {
+    if (!params.chatId && params.to) params.chatId = params.to;
+    if (!params.chatId && params.channelId) params.chatId = params.channelId;
+    if (!params.text && params.body) params.text = params.body;
+    if (!params.text && params.content) params.text = params.content;
+  }
+  if (action.tool === "google_calendar_create_event") {
+    if (!params.summary && params.title) params.summary = params.title;
+    if (!params.summary && params.subject) params.summary = params.subject;
+    if (!params.description && params.body) params.description = params.body;
   }
   if (action.tool === "outlook_create_event") {
     if (!params.summary && params.title) params.summary = params.title;

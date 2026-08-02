@@ -66,14 +66,21 @@ export async function POST(req: NextRequest) {
     const isDiscordConnected = !!integrations.discord?.connected && !integrations.discord?.isSimulated;
     const isLinkedInConnected = !!integrations.linkedin?.connected && !integrations.linkedin?.isSimulated;
     const isCalendlyConnected = !!integrations.calendly?.connected && !integrations.calendly?.isSimulated;
+    const isTelegramConnected = !!integrations.telegram?.connected;
+    const isTeamsConnected = !!integrations.teams?.connected;
+    const isGoogleCalendarConnected =
+      !!integrations.google_calendar?.connected && !integrations.google_calendar?.isSimulated;
 
     const origin = req.nextUrl.origin;
 
     let gmailSummary = "No Gmail messages synced.";
     let whatsappSummary = "No WhatsApp messages synced.";
+    let telegramSummary = "No Telegram messages synced.";
+    let teamsSummary = "No Teams messages synced.";
     let slackSummary = "No Slack messages synced.";
     let outlookSummary = "No Outlook messages synced.";
     let outlookCalendarSummary = "No Outlook calendar events synced.";
+    let googleCalendarSummary = "No Google Calendar events synced.";
     let discordSummary = "No Discord messages synced.";
     let linkedinSummary = "No LinkedIn profile synced.";
     let calendlySummary = "No Calendly events synced.";
@@ -104,6 +111,36 @@ export async function POST(req: NextRequest) {
           .map(
             (m: any) =>
               `Chat: ${m.chatName}\nchatId: ${m.chatId || m.id || m.from}\nSender: ${m.from}\nBody: ${m.body}\nTimestamp: ${m.timestamp}`
+          )
+          .join("\n---\n");
+      }
+    }
+
+    if (isTelegramConnected) {
+      const parsed = await fetchMcpText(origin, "/api/telegram-mcp", {
+        method: "telegram_get_recent_messages",
+        userId,
+      });
+      if (parsed?.messages?.length) {
+        telegramSummary = parsed.messages
+          .map(
+            (m: any) =>
+              `Chat: ${m.chatName}\nchatId: ${m.chatId}\nmessageId: ${m.id}\nSender: ${m.from}\nBody: ${m.body}\nTimestamp: ${m.timestamp}`
+          )
+          .join("\n---\n");
+      }
+    }
+
+    if (isTeamsConnected) {
+      const parsed = await fetchMcpText(origin, "/api/teams-mcp", {
+        method: "teams_get_recent_messages",
+        userId,
+      });
+      if (parsed?.messages?.length) {
+        teamsSummary = parsed.messages
+          .map(
+            (m: any) =>
+              `Chat: ${m.chatName}\nchatId: ${m.chatId}\nmessageId: ${m.id}\nSender: ${m.from}\nBody: ${m.body || m.text}\nTimestamp: ${m.timestamp}`
           )
           .join("\n---\n");
       }
@@ -156,6 +193,28 @@ export async function POST(req: NextRequest) {
           .join("\n---\n");
       } else {
         outlookCalendarSummary = "Outlook connected — no upcoming events in the next 14 days.";
+      }
+    }
+
+    if (isGoogleCalendarConnected) {
+      const calendar = await fetchMcpText(origin, "/api/google-calendar-mcp", {
+        method: "google_calendar_list_events",
+        params: {
+          timeMin: new Date().toISOString(),
+          timeMax: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+        userId,
+      });
+      if (calendar?.events?.length) {
+        googleCalendarSummary = calendar.events
+          .map(
+            (e: any) =>
+              `Title: ${e.title}\nStart: ${e.start}\nEnd: ${e.end}\nLocation: ${e.location || "n/a"}\nID: ${e.id}`
+          )
+          .join("\n---\n");
+      } else {
+        googleCalendarSummary =
+          "Google Calendar connected — no upcoming events in the next 14 days.";
       }
     }
 
@@ -275,6 +334,12 @@ ${gmailSummary}
 === WhatsApp ===
 ${whatsappSummary}
 
+=== Telegram ===
+${telegramSummary}
+
+=== Microsoft Teams ===
+${teamsSummary}
+
 === Slack ===
 ${slackSummary}
 
@@ -283,6 +348,9 @@ ${outlookSummary}
 
 === Outlook calendar ===
 ${outlookCalendarSummary}
+
+=== Google Calendar ===
+${googleCalendarSummary}
 
 === Discord ===
 ${discordSummary}
@@ -296,7 +364,7 @@ ${actionNote}
 
 CRITICAL ACTION RULES:
 1. You CANNOT send messages or create calendar events by yourself. Draft first; a real tool runs only after user confirm.
-2. When the user asks to reply/send on Discord/Slack/Gmail/WhatsApp/LinkedIn, book/cancel/update Calendly, or add/remind via Outlook calendar:
+2. When the user asks to reply/send on Discord/Slack/Gmail/WhatsApp/Telegram/Teams/LinkedIn, book/cancel/update Calendly, or add/remind via Outlook or Google Calendar:
    - First return a draft and set pendingAction with the exact tool + params.
    - Ask them to confirm (they can click Confirm or type "yes"/"confirm"/"add it"/"schedule it").
 3. NEVER say a message was sent / event created / booking created unless SYSTEM ACTION RESULT says Successfully executed.
@@ -306,15 +374,18 @@ CRITICAL ACTION RULES:
 5. For Discord channel posts (not reply) use "discord_post_message" with channelId + content.
 6. For Slack use "slack_post_message" with channelId + text (+ thread_ts optional).
 7. For WhatsApp use "whatsapp_send_message" with to + body.
-8. For Gmail use "gmail_send_message" with to + subject + body.
-9. For LinkedIn share use "linkedin_post_share" with text.
-10. For Calendly booking use "calendly_create_booking" with eventTypeUri + startTime (UTC ISO) + email (+ name/timezone).
-11. For Calendly cancel use "calendly_cancel_event" with eventUuid (+ reason).
-12. For Calendly event type edits use "calendly_update_event_type" with eventTypeUri + fields to change.
-13. For Outlook calendar reminders/meetings use "outlook_create_event" with:
+8. For Telegram use "telegram_send_message" with chatId + text, or "telegram_reply_message" with chatId + replyToMessageId + text.
+9. For Microsoft Teams use "teams_send_message" with chatId + text, or "teams_reply_message" with chatId + replyToMessageId + text.
+10. For Gmail use "gmail_send_message" with to + subject + body.
+11. For LinkedIn share use "linkedin_post_share" with text.
+12. For Calendly booking use "calendly_create_booking" with eventTypeUri + startTime (UTC ISO) + email (+ name/timezone).
+13. For Calendly cancel use "calendly_cancel_event" with eventUuid (+ reason).
+14. For Calendly event type edits use "calendly_update_event_type" with eventTypeUri + fields to change.
+15. For Outlook calendar reminders/meetings use "outlook_create_event" with:
    { "summary": "event title", "start": "YYYY-MM-DDTHH:mm:ss", "end": "YYYY-MM-DDTHH:mm:ss", "timeZone": "${prefs.timezone}", "description": "optional notes", "reminderMinutesBeforeStart": 30 }
    Use the user's timezone (${prefs.timezone}). Prefer a short timed block (e.g. 15–30 minutes) near the deadline they mentioned. Do NOT invent that Outlook calendar is unavailable — the tool exists when Outlook is connected.
-14. To refresh/list Outlook calendar beyond the synced window, use "outlook_list_events" with optional timeMin/timeMax (ISO). Still require confirm before running.
+16. To refresh/list Outlook calendar beyond the synced window, use "outlook_list_events" with optional timeMin/timeMax (ISO). Still require confirm before running.
+17. For Google Calendar use "google_calendar_create_event" with the same shape as Outlook create (summary/start/end/timeZone/description). List with "google_calendar_list_events".
 
 Return EXACT JSON:
 {

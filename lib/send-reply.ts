@@ -113,6 +113,42 @@ export async function sendPlatformReply(options: {
       void trackFeatureUsage({ userId, feature: "send", action: "confirmed", metadata: { app: "whatsapp" } });
       return { ok: true, app: "whatsapp" };
     }
+    case "telegram": {
+      const chatId = ref.chatId || activityId;
+      if (!chatId) throw new Error("Telegram reply needs a chat id.");
+      if (ref.messageId) {
+        await callMcp("/api/telegram-mcp", "telegram_reply_message", userId, {
+          chatId,
+          replyToMessageId: ref.messageId,
+          text: body,
+        });
+      } else {
+        await callMcp("/api/telegram-mcp", "telegram_send_message", userId, {
+          chatId,
+          text: body,
+        });
+      }
+      void trackFeatureUsage({ userId, feature: "send", action: "confirmed", metadata: { app: "telegram" } });
+      return { ok: true, app: "telegram" };
+    }
+    case "teams": {
+      const chatId = ref.chatId || ref.channelId || activityId;
+      if (!chatId) throw new Error("Teams reply needs a chat id.");
+      if (ref.messageId) {
+        await callMcp("/api/teams-mcp", "teams_reply_message", userId, {
+          chatId,
+          replyToMessageId: ref.messageId,
+          text: body,
+        });
+      } else {
+        await callMcp("/api/teams-mcp", "teams_send_message", userId, {
+          chatId,
+          text: body,
+        });
+      }
+      void trackFeatureUsage({ userId, feature: "send", action: "confirmed", metadata: { app: "teams" } });
+      return { ok: true, app: "teams" };
+    }
     default:
       throw new Error(`Sending replies for ${sourceApp} is not supported yet.`);
   }

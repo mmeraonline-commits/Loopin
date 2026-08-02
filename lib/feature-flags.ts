@@ -7,6 +7,9 @@ export type FeatureFlags = {
     discord: boolean;
     linkedin: boolean;
     calendly: boolean;
+    telegram: boolean;
+    google_calendar: boolean;
+    teams: boolean;
   };
   surfaces: {
     aiAgent: boolean;
@@ -25,6 +28,9 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
     discord: true,
     linkedin: true,
     calendly: true,
+    telegram: true,
+    google_calendar: true,
+    teams: true,
   },
   surfaces: {
     aiAgent: true,

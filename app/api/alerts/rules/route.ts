@@ -80,7 +80,16 @@ export async function POST(req: NextRequest) {
     const ruleGate = await assertAlertRuleQuota(userId);
     if (isNextResponse(ruleGate)) return ruleGate;
 
-    const allowedApps = new Set(["gmail", "whatsapp", "slack", "discord", "telegram", "calendly", "outlook"]);
+    const allowedApps = new Set([
+      "gmail",
+      "whatsapp",
+      "slack",
+      "discord",
+      "telegram",
+      "teams",
+      "calendly",
+      "outlook",
+    ]);
     const cleanApps = apps.filter((app: string) => allowedApps.has(app));
     if (cleanApps.length === 0) {
       return NextResponse.json({ error: "Select at least one supported app." }, { status: 400 });

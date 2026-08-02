@@ -39,8 +39,8 @@ const DETAIL_LEVELS = new Set<DetailLevel>(["minimal", "standard", "detailed"]);
 const CADENCES = new Set<BriefingCadence>(["morning", "twice_daily", "manual"]);
 const SYNC_FREQS = new Set<SyncFrequency>(["real_time", "15_minutes", "hourly"]);
 const PRIORITIES = new Set<AlertPriorityFilter>(["all", "medium_high", "high"]);
-const CHANNELS = new Set(["in_app", "email", "whatsapp", "push"]);
-const ALERT_METHODS = new Set(["in_app", "email", "push", "whatsapp"]);
+const CHANNELS = new Set(["in_app", "email", "whatsapp", "telegram", "push"]);
+const ALERT_METHODS = new Set(["in_app", "email", "push", "whatsapp", "telegram"]);
 
 function asString(value: unknown, max: number, fallback = ""): string {
   if (typeof value !== "string") return fallback;

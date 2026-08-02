@@ -34,7 +34,7 @@ export async function deliverBriefingToChannels(input: {
   const body = (input.summary || "Open Loopin to read your latest digest.").slice(0, 280);
   const results: Record<string, unknown> = {};
 
-  const pushWa = list.filter((c) => c === "push" || c === "whatsapp");
+  const pushWa = list.filter((c) => c === "push" || c === "whatsapp" || c === "telegram");
   if (pushWa.length) {
     results.notify = await notifyUserOfAlert(input.userId, pushWa, {
       title,

@@ -9,8 +9,8 @@ import { classifyInboxItem } from "./inbox-classify";
 
 const APP_URL = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
-const INBOX_APPS = new Set(["gmail", "whatsapp", "slack", "discord", "outlook"]);
-const REPLYABLE_APPS = new Set(["gmail", "whatsapp", "slack", "discord"]);
+const INBOX_APPS = new Set(["gmail", "whatsapp", "slack", "discord", "outlook", "telegram", "teams"]);
+const REPLYABLE_APPS = new Set(["gmail", "whatsapp", "slack", "discord", "telegram", "teams"]);
 
 type IntegrationValue = {
   connected?: boolean;
@@ -126,6 +126,7 @@ function extractFrom(app: string, title: string, body: string, description: stri
     return author || undefined;
   }
   if (app === "whatsapp") return title;
+  if (app === "telegram") return title;
   if (app === "slack") return description ? undefined : title;
   return undefined;
 }

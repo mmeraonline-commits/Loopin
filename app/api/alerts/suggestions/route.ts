@@ -4,7 +4,7 @@ import { hasInsforgeAdminKey, insforgeAdmin } from "@/lib/insforge-admin";
 import { publishAlertRealtimeEvent } from "@/lib/alerts-realtime";
 import { denySurface, loadUserPlan } from "@/lib/plan-usage";
 
-const monitorableApps = new Set(["gmail", "whatsapp"]);
+const monitorableApps = new Set(["gmail", "whatsapp", "telegram"]);
 
 type Suggestion = {
   title: string;
@@ -37,6 +37,7 @@ async function fetchActivitySummary(origin: string, userId: string, apps: string
   const summary = {
     gmailUnread: 0,
     whatsappMessages: 0,
+    telegramMessages: 0,
     terms: [] as string[]
   };
 
@@ -82,6 +83,25 @@ async function fetchActivitySummary(origin: string, userId: string, apps: string
     }
   }
 
+  if (apps.includes("telegram")) {
+    try {
+      const res = await fetch(`${origin}/api/telegram-mcp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ method: "telegram_get_recent_messages", userId }),
+      });
+      const json = await res.json();
+      const text = json.result?.content?.[0]?.text;
+      const messages = text ? JSON.parse(text).messages || [] : [];
+      summary.telegramMessages = messages.length;
+      summary.terms.push(
+        ...(messages as MessageLike[]).map((message) => message.body).filter(isString).slice(0, 10)
+      );
+    } catch (error) {
+      console.error("[alerts-suggestions] Telegram summary failed:", error);
+    }
+  }
+
   return summary;
 }
 
@@ -107,6 +127,17 @@ function buildDeterministicSuggestions(apps: string[], summary: Awaited<ReturnTy
       priority: "medium",
       condition: "Recent WhatsApp message contains tomorrow, remind, send, confirm, review, or follow up",
       action: "mark_follow_up"
+    });
+  }
+
+  if (apps.includes("telegram") && summary.telegramMessages > 0) {
+    suggestions.push({
+      title: "Telegram request watcher",
+      description: `Watch ${summary.telegramMessages} recent Telegram message${summary.telegramMessages === 1 ? "" : "s"} for asks and reminders.`,
+      apps: ["telegram"],
+      priority: "medium",
+      condition: "Recent Telegram message contains remind, send, confirm, review, or follow up",
+      action: "mark_follow_up",
     });
   }
 

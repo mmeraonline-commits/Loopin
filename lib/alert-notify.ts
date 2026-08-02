@@ -59,6 +59,11 @@ export async function notifyUserOfAlert(
         continue;
       }
 
+      if (channel === "telegram") {
+        results.telegram = await sendTelegramAlertToUser(userId, payload);
+        continue;
+      }
+
       if (channel === "email") {
         const appUrl =
           process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
@@ -190,6 +195,84 @@ export async function sendWhatsAppAlertToUser(
     return {
       ok: false,
       error: err instanceof Error ? err.message : "Failed to send WhatsApp alert",
+    };
+  }
+}
+
+type TelegramIntegration = {
+  connected?: boolean;
+  isSimulated?: boolean;
+  chatId?: string;
+};
+
+export async function sendTelegramAlertToUser(
+  userId: string,
+  payload: AlertNotifyPayload
+): Promise<{ ok: boolean; error?: string; to?: string }> {
+  if (!hasInsforgeAdminKey) {
+    return { ok: false, error: "Server database key missing" };
+  }
+
+  const { data: dbUser, error } = await insforgeAdmin.database
+    .from("users")
+    .select("integrations")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error || !dbUser) {
+    return { ok: false, error: "User not found" };
+  }
+
+  const telegram = (dbUser.integrations?.telegram || null) as TelegramIntegration | null;
+  if (!telegram?.connected || telegram.isSimulated) {
+    return { ok: false, error: "Telegram is not connected" };
+  }
+
+  const chatId = String(telegram.chatId || "");
+  if (!chatId) {
+    return { ok: false, error: "No Telegram chat linked. Reconnect Telegram from Integrations." };
+  }
+
+  const appUrl =
+    process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const absoluteUrl = payload.url
+    ? payload.url.startsWith("http")
+      ? payload.url
+      : `${appUrl}${payload.url}`
+    : undefined;
+
+  const text = [
+    `*Loopin Alert*`,
+    payload.title,
+    "",
+    payload.body,
+    absoluteUrl ? `\nOpen: ${absoluteUrl}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  try {
+    const { telegramApi, isTelegramBotConfigured } = await import("@/lib/telegram");
+    if (!isTelegramBotConfigured()) {
+      return { ok: false, error: "TELEGRAM_BOT_TOKEN is not configured" };
+    }
+    const sent = await telegramApi("sendMessage", {
+      chat_id: chatId,
+      text,
+      parse_mode: "Markdown",
+    });
+    if (!sent.ok) {
+      // Retry without markdown if parse fails
+      const plain = await telegramApi("sendMessage", { chat_id: chatId, text: text.replace(/\*/g, "") });
+      if (!plain.ok) {
+        return { ok: false, error: plain.description || sent.description || "Telegram send failed" };
+      }
+    }
+    return { ok: true, to: chatId };
+  } catch (err: unknown) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Failed to send Telegram alert",
     };
   }
 }

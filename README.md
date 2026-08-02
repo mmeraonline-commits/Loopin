@@ -77,14 +77,19 @@ GEMINI_API_KEY=your_gemini_api_key
 GOOGLE_CLIENT_ID=your_google_oauth_client_id
 GOOGLE_CLIENT_SECRET=your_google_oauth_client_secret
 
+# Telegram Bot (Integrations → Telegram)
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+TELEGRAM_WEBHOOK_SECRET=optional_webhook_secret
+
 SENT_DM_API_KEY=your_sentdm_api_key
 SENT_DM_TEMPLATE_ID=your_sentdm_template_id
 ```
 
 3. Configure Google OAuth.
 
-- Add `http://localhost:3000/auth/gmail-callback` as an authorized redirect URI.
+- Add `http://localhost:3000/auth/gmail-callback` and `http://localhost:3000/auth/google-calendar-callback` as authorized redirect URIs.
 - Use the same `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env.local`.
+- For Telegram: create a bot with BotFather, set `TELEGRAM_BOT_TOKEN`, and point the webhook to `{APP_URL}/api/telegram-webhook` (optional secret header via `TELEGRAM_WEBHOOK_SECRET`).
 
 4. Prepare the database.
 

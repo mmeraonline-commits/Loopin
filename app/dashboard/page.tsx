@@ -373,6 +373,7 @@ function DashboardOverviewPanel({ user }: { user: any }) {
     { id: "gmail", name: "Gmail", icon: "/001-gmail.png", connected: !!user?.integrations?.gmail?.connected },
     { id: "whatsapp", name: "WhatsApp", icon: "/002-whatsapp.png", connected: !!user?.integrations?.whatsapp?.connected },
     { id: "slack", name: "Slack", icon: "/005-slack.png", connected: !!user?.integrations?.slack?.connected },
+    { id: "teams", name: "Teams", icon: "/010-teams.svg", connected: !!user?.integrations?.teams?.connected },
     { id: "outlook", name: "Outlook", icon: "/003-email.png", connected: !!user?.integrations?.outlook?.connected },
   ];
 
@@ -1173,7 +1174,9 @@ function AiAgentPanel({ user }: { user: any }) {
     calendly: "/008-calendly.svg",
     telegram: "/004-telegram.png",
     discord: "/006-discord.png",
-    linkedin: "/007-linkedin.png"
+    linkedin: "/007-linkedin.png",
+    google_calendar: "/009-google-calendar.svg",
+    teams: "/010-teams.svg",
   };
 
   const getAppIcon = (app: string) => {
@@ -1481,7 +1484,7 @@ function CustomMarkdownComponents() {
 // Custom Renderer helpers for Markdown formatting
 function renderInlineMarkdown(text: string) {
   const parseInlineLogos = (str: string, keyPrefix: string): React.ReactNode[] => {
-    const regex = /(gmail|whatsapp|slack|outlook|calendly|telegram|discord|linkedin)/gi;
+    const regex = /(gmail|whatsapp|slack|outlook|calendly|telegram|discord|linkedin|teams|google.?calendar)/gi;
     const tokens = str.split(regex);
     if (tokens.length <= 1) return [str];
 
@@ -1492,8 +1495,12 @@ function renderInlineMarkdown(text: string) {
       outlook: "/003-email.png",
       calendly: "/008-calendly.svg",
       telegram: "/004-telegram.png",
+      google_calendar: "/009-google-calendar.svg",
+      "google calendar": "/009-google-calendar.svg",
+      teams: "/010-teams.svg",
+      "microsoft teams": "/010-teams.svg",
       discord: "/006-discord.png",
-      linkedin: "/007-linkedin.png"
+      linkedin: "/007-linkedin.png",
     };
 
     return tokens.map((tok, index) => {
@@ -1790,26 +1797,31 @@ function BriefingPanel() {
   const availableApps = [
     { key: "gmail", label: "Gmail", logo: "/001-gmail.png" },
     { key: "whatsapp", label: "WhatsApp", logo: "/002-whatsapp.png" },
+    { key: "telegram", label: "Telegram", logo: "/004-telegram.png" },
     { key: "slack", label: "Slack", logo: "/005-slack.png" },
+    { key: "teams", label: "Teams", logo: "/010-teams.svg" },
   ];
 
   const connectedApps: Record<string, boolean> = {
     gmail: !!(user as any)?.integrations?.gmail?.connected,
     whatsapp: !!(user as any)?.integrations?.whatsapp?.connected,
+    telegram: !!(user as any)?.integrations?.telegram?.connected,
     slack: !!(user as any)?.integrations?.slack?.connected && !(user as any)?.integrations?.slack?.isSimulated,
+    teams: !!(user as any)?.integrations?.teams?.connected,
   };
-  const availableCategories = ["email", "messages", "mentions", "tasks", "follow_ups"];
+  const availableCategories = ["email", "messages", "calendar", "mentions", "tasks", "follow_ups"];
   const categoryLabels: Record<string, string> = {
-    email: "Email", messages: "Messages", mentions: "Mentions", tasks: "Tasks", follow_ups: "Follow-Ups"
+    email: "Email", messages: "Messages", calendar: "Calendar", mentions: "Mentions", tasks: "Tasks", follow_ups: "Follow-Ups"
   };
   const categoryIcons: Record<string, any> = {
-    email: Mail, messages: MessageSquare, mentions: AtSign, tasks: CheckCircle, follow_ups: ArrowRight
+    email: Mail, messages: MessageSquare, calendar: Calendar, mentions: AtSign, tasks: CheckCircle, follow_ups: ArrowRight
   };
   const categoryColors: Record<string, string> = {
-    email: "text-blue-400", messages: "text-emerald-400", mentions: "text-violet-400", tasks: "text-amber-400", follow_ups: "text-rose-400"
+    email: "text-blue-400", messages: "text-emerald-400", calendar: "text-sky-400", mentions: "text-violet-400", tasks: "text-amber-400", follow_ups: "text-rose-400"
   };
   const categoryBg: Record<string, string> = {
     email: "bg-blue-500/10 border-blue-500/20", messages: "bg-emerald-500/10 border-emerald-500/20",
+    calendar: "bg-sky-500/10 border-sky-500/20",
     mentions: "bg-violet-500/10 border-violet-500/20", tasks: "bg-amber-500/10 border-amber-500/20",
     follow_ups: "bg-rose-500/10 border-rose-500/20"
   };
@@ -2490,6 +2502,16 @@ const PLATFORMS: Platform[] = [
     badgeBg: "bg-brand-primary/10 border-emerald-500/20 text-brand-accent"
   },
   {
+    id: "teams",
+    name: "Microsoft Teams",
+    desc: "Sync chats, draft replies, and send messages across your Teams conversations.",
+    logo: "/010-teams.svg",
+    color: "text-indigo-400",
+    bg: "from-indigo-500/10 via-transparent to-indigo-500/5",
+    borderGlow: "group-hover:border-indigo-500/30",
+    badgeBg: "bg-indigo-500/10 border-indigo-500/20 text-indigo-400"
+  },
+  {
     id: "outlook",
     name: "Outlook",
     desc: "Triage inbox with Loopin categories, draft replies, and manage calendar.",
@@ -2532,12 +2554,22 @@ const PLATFORMS: Platform[] = [
   {
     id: "telegram",
     name: "Telegram",
-    desc: "Coming soon — Telegram connect is not available yet.",
+    desc: "Link the Loopin bot for alerts, briefs, and chat replies in Telegram.",
     logo: "/004-telegram.png",
     color: "text-sky-400",
     bg: "from-sky-500/10 via-transparent to-sky-500/5",
     borderGlow: "group-hover:border-sky-500/30",
     badgeBg: "bg-sky-500/10 border-sky-500/20 text-sky-400"
+  },
+  {
+    id: "google_calendar",
+    name: "Google Calendar",
+    desc: "List upcoming events and create calendar blocks with confirm-before-send.",
+    logo: "/009-google-calendar.svg",
+    color: "text-blue-400",
+    bg: "from-blue-500/10 via-transparent to-blue-500/5",
+    borderGlow: "group-hover:border-blue-500/30",
+    badgeBg: "bg-blue-500/10 border-blue-500/20 text-blue-400"
   },
   {
     id: "custom",
@@ -2576,6 +2608,13 @@ const platformTools: Record<string, Array<{ name: string; desc: string; params: 
     { name: "slack_get_history", desc: "Fetch message history from a channel", params: "channelId: string, limit?: number" },
     { name: "slack_post_message", desc: "Post a message to a channel or DM", params: "channelId: string, text: string" }
   ],
+  teams: [
+    { name: "teams_list_chats", desc: "List recent Teams chats", params: "" },
+    { name: "teams_get_recent_messages", desc: "Fetch recent messages across chats", params: "" },
+    { name: "teams_get_chat_history", desc: "Read history for a chat", params: "chatId: string, limit?: number" },
+    { name: "teams_send_message", desc: "Send a message to a Teams chat", params: "chatId: string, text: string" },
+    { name: "teams_reply_message", desc: "Reply in a Teams chat", params: "chatId: string, text: string, replyToMessageId?: string" }
+  ],
   outlook: [
     { name: "outlook_list_messages", desc: "List email messages in the user's inbox", params: "maxResults?: number, includeBody?: boolean" },
     { name: "outlook_ensure_categories", desc: "Ensure Loopin triage categories exist", params: "categories: {name,color}[]" },
@@ -2609,8 +2648,14 @@ const platformTools: Record<string, Array<{ name: string; desc: string; params: 
     { name: "linkedin_post_share", desc: "Create a new share/post on LinkedIn feed", params: "text: string, visibility?: 'public'|'connections'" }
   ],
   telegram: [
-    { name: "telegram_get_updates", desc: "Retrieve latest updates and messages", params: "limit?: number" },
-    { name: "telegram_send_message", desc: "Send a message to a chat or group", params: "chatId: string, text: string" }
+    { name: "telegram_get_recent_messages", desc: "Fetch recent messages from the linked Telegram bot chat", params: "limit?: number" },
+    { name: "telegram_get_chat_history", desc: "Read chat history for a specific chat", params: "chatId: string, limit?: number" },
+    { name: "telegram_send_message", desc: "Send a message to a chat", params: "chatId: string, text: string" },
+    { name: "telegram_reply_message", desc: "Reply to a specific Telegram message", params: "chatId: string, replyToMessageId: string, text: string" }
+  ],
+  google_calendar: [
+    { name: "google_calendar_list_events", desc: "List upcoming Google Calendar events", params: "timeMin?: string, timeMax?: string" },
+    { name: "google_calendar_create_event", desc: "Create a Google Calendar event", params: "summary: string, start: string, end: string, timeZone?: string, description?: string" }
   ],
   custom: [
     { name: "webhook_trigger", desc: "Trigger a webhook endpoint with custom payload", params: "url: string, payload: object" },
@@ -2636,6 +2681,12 @@ function IntegrationsPanel() {
   const [whatsAppPairingCode, setWhatsAppPairingCode] = useState<string | null>(null);
   const [whatsAppConnectStatus, setWhatsAppConnectStatus] = useState<string | null>(null);
   const [isConnectingWhatsApp, setIsConnectingWhatsApp] = useState(false);
+
+  // Telegram Connection States
+  const [showTelegramConnectModal, setShowTelegramConnectModal] = useState(false);
+  const [telegramDeepLink, setTelegramDeepLink] = useState<string | null>(null);
+  const [telegramConnectStatus, setTelegramConnectStatus] = useState<string | null>(null);
+  const [isConnectingTelegram, setIsConnectingTelegram] = useState(false);
 
   // Toast Notification State
   const [toast, setToast] = useState<{ message: string; isExiting?: boolean } | null>(null);
@@ -2680,7 +2731,6 @@ function IntegrationsPanel() {
 
   const isChannelAllowed = (platformId: string) => {
     if (platformId === "custom") return true;
-    if (platformId === "telegram") return false; // Coming soon — no real connect API yet
     return canUseChannel(userPlanId, platformId as ChannelId);
   };
 
@@ -2721,6 +2771,38 @@ function IntegrationsPanel() {
       if (intervalId) clearInterval(intervalId);
     };
   }, [showWhatsAppConnectModal, whatsAppConnectStatus, whatsAppPairingCode, user, refreshUser]);
+
+  // Poll Telegram connection status while linking
+  useEffect(() => {
+    let intervalId: ReturnType<typeof setInterval> | undefined;
+    if (showTelegramConnectModal && telegramConnectStatus === "linking") {
+      intervalId = setInterval(async () => {
+        try {
+          const res = await fetch("/api/telegram-connect", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "status", userId: user?.id }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.status === "connected") {
+              setTelegramConnectStatus("connected");
+              clearInterval(intervalId);
+              await refreshUser();
+              setShowTelegramConnectModal(false);
+              setTelegramDeepLink(null);
+              showToast("Telegram connected successfully!");
+            }
+          }
+        } catch (e) {
+          console.error("Error polling Telegram status:", e);
+        }
+      }, 3000);
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [showTelegramConnectModal, telegramConnectStatus, user, refreshUser]);
 
   const handleStartConnectWhatsApp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -2803,6 +2885,82 @@ function IntegrationsPanel() {
     }
   };
 
+  const handleStartConnectTelegram = async () => {
+    if (!user) return;
+    setIsConnectingTelegram(true);
+    setTelegramConnectStatus("linking");
+    setTelegramDeepLink(null);
+    try {
+      const res = await fetch("/api/telegram-connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "connect", userId: user.id }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.deepLink) {
+        setTelegramDeepLink(data.deepLink);
+        setTelegramConnectStatus(data.status === "connected" ? "connected" : "linking");
+        if (data.status === "connected") {
+          await refreshUser();
+          setShowTelegramConnectModal(false);
+          showToast("Telegram already connected");
+        }
+      } else {
+        setTelegramConnectStatus("error");
+        showToast(data.error || "Could not start Telegram connect");
+      }
+    } catch (err) {
+      console.error("Failed to connect Telegram:", err);
+      setTelegramConnectStatus("error");
+    } finally {
+      setIsConnectingTelegram(false);
+    }
+  };
+
+  const handleConnectSimulatedTelegram = async () => {
+    if (!user) return;
+    setIsConnectingTelegram(true);
+    try {
+      const res = await fetch("/api/telegram-connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "connect-simulated", userId: user.id }),
+      });
+      if (res.ok) {
+        await refreshUser();
+        setShowTelegramConnectModal(false);
+        showToast("Telegram connected (simulated)");
+      } else {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.error || "Simulated Telegram connect failed");
+      }
+    } catch (err) {
+      console.error("Failed to connect simulated Telegram:", err);
+    } finally {
+      setIsConnectingTelegram(false);
+    }
+  };
+
+  const handleDisconnectTelegram = async () => {
+    if (!user) return;
+    setUpdatingPlatform("telegram");
+    try {
+      const res = await fetch("/api/telegram-connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "disconnect", userId: user.id }),
+      });
+      if (res.ok) {
+        await refreshUser();
+        showToast("Telegram disconnected");
+      }
+    } catch (err) {
+      console.error("Error disconnecting Telegram:", err);
+    } finally {
+      setUpdatingPlatform(null);
+    }
+  };
+
   const handleToggleConnect = async (platformId: string) => {
     if (!user) return;
 
@@ -2816,6 +2974,19 @@ function IntegrationsPanel() {
         setWhatsAppPairingCode(null);
         setWhatsAppConnectStatus(null);
         setShowWhatsAppConnectModal(true);
+      }
+      return;
+    }
+
+    if (platformId === "telegram") {
+      const currentIntegrations = user.integrations || {};
+      const isConnected = !!currentIntegrations.telegram?.connected;
+      if (isConnected) {
+        await handleDisconnectTelegram();
+      } else {
+        setTelegramDeepLink(null);
+        setTelegramConnectStatus(null);
+        setShowTelegramConnectModal(true);
       }
       return;
     }
@@ -2913,6 +3084,48 @@ function IntegrationsPanel() {
             showToast("Add MICROSOFT_CLIENT_ID and MICROSOFT_CLIENT_SECRET to .env.local");
           }
         }
+      } else if (platformId === "teams") {
+        if (isConnected) {
+          const res = await fetch("/api/teams-connect", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "disconnect", userId: user.id }),
+          });
+          if (res.ok) {
+            await refreshUser();
+            showToast("Microsoft Teams disconnected");
+          } else {
+            const data = await res.json().catch(() => ({}));
+            showToast(data.error || "Failed to disconnect Teams");
+          }
+        } else {
+          const res = await fetch("/api/teams-connect");
+          const data = await res.json();
+          const clientId = data.clientId;
+          if (data.configured && clientId) {
+            const redirectUri = `${window.location.origin}/auth/teams-callback`;
+            const scopes =
+              (typeof data.scopes === "string" && data.scopes) ||
+              "openid profile offline_access User.Read Chat.ReadWrite ChannelMessage.Read.All ChannelMessage.Send Team.ReadBasic.All Channel.ReadBasic.All";
+            window.location.assign(
+              `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${encodeURIComponent(clientId)}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&response_mode=query&scope=${encodeURIComponent(scopes)}`
+            );
+          } else if (data.configured && data.authUrl) {
+            window.location.assign(data.authUrl);
+          } else {
+            const sim = await fetch("/api/teams-connect", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "connect-simulated", userId: user.id }),
+            });
+            if (sim.ok) {
+              await refreshUser();
+              showToast("Microsoft Teams connected (simulated)");
+            } else {
+              showToast("Add MICROSOFT_CLIENT_ID and MICROSOFT_CLIENT_SECRET to .env.local");
+            }
+          }
+        }
       } else if (platformId === "discord") {
         if (isConnected) {
           const updatedIntegrations = { ...currentIntegrations, discord: null };
@@ -2976,8 +3189,54 @@ function IntegrationsPanel() {
             showToast("Add CALENDLY_CLIENT_ID and CALENDLY_CLIENT_SECRET to .env.local");
           }
         }
-      } else if (platformId === "telegram") {
-        showToast("Telegram is coming soon — connect isn’t available yet.");
+      } else if (platformId === "google_calendar") {
+        if (isConnected) {
+          const res = await fetch("/api/google-calendar-connect", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "disconnect", userId: user.id }),
+          });
+          if (res.ok) {
+            await refreshUser();
+            showToast("Google Calendar disconnected");
+          } else {
+            const data = await res.json().catch(() => ({}));
+            showToast(data.error || "Failed to disconnect Google Calendar");
+          }
+        } else {
+          const res = await fetch("/api/google-calendar-connect");
+          const data = await res.json();
+          // Always authorize against the current browser origin so local :3000/:3001
+          // matches the token exchange redirect_uri (APP_URL may point at production).
+          const scopes =
+            (typeof data.scopes === "string" && data.scopes) ||
+            "openid email profile https://www.googleapis.com/auth/calendar.events";
+          const clientId =
+            data.clientId && data.clientId !== "your_google_client_id_here"
+              ? data.clientId
+              : "";
+          let authUrl = "";
+          if (clientId) {
+            const redirectUri = `${window.location.origin}/auth/google-calendar-callback`;
+            authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scopes)}&access_type=offline&prompt=consent`;
+          }
+          if (authUrl) {
+            window.location.assign(authUrl);
+          } else {
+            // Fallback simulated connect when Google OAuth is not configured
+            const sim = await fetch("/api/google-calendar-connect", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "connect-simulated", userId: user.id }),
+            });
+            if (sim.ok) {
+              await refreshUser();
+              showToast("Google Calendar connected (simulated)");
+            } else {
+              showToast("Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to .env.local");
+            }
+          }
+        }
       } else {
         // For other platforms (simulated state toggler)
         const updatedIntegrations = {
@@ -3449,6 +3708,97 @@ function IntegrationsPanel() {
         </div>
       )}
 
+      {/* TELEGRAM CONNECTION DIALOG MODAL */}
+      {showTelegramConnectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-[#090d1a] light:bg-white border border-white/10 light:border-slate-200 rounded-3xl w-full max-w-md p-6 space-y-6 shadow-2xl relative">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3 text-sky-400">
+                <SafeIcon hugeIcon={null} lucideIcon={Globe} size={24} className="text-sky-400 animate-pulse" />
+                <h3 className="text-base font-bold text-white light:text-slate-900 tracking-wide">Connect Telegram</h3>
+              </div>
+              <button
+                onClick={() => setShowTelegramConnectModal(false)}
+                className="p-1 rounded-lg hover:bg-white/5 light:hover:bg-slate-100 text-slate-400 hover:text-white light:hover:text-slate-950 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {!telegramDeepLink && telegramConnectStatus !== "linking" ? (
+              <div className="space-y-4">
+                <p className="text-xs text-slate-300 light:text-slate-700 leading-relaxed">
+                  Link the Loopin Telegram bot to this account. Open the deep link, tap Start, and we&apos;ll save your chat for alerts and replies.
+                </p>
+                <div className="flex flex-col space-y-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={handleStartConnectTelegram}
+                    disabled={isConnectingTelegram}
+                    className="w-full py-2.5 bg-sky-600 hover:bg-sky-500 disabled:bg-sky-800/40 text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2"
+                  >
+                    {isConnectingTelegram ? (
+                      <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <span>Generate Telegram Link</span>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConnectSimulatedTelegram}
+                    disabled={isConnectingTelegram}
+                    className="w-full py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 light:border-slate-200 text-slate-300 light:text-slate-700 rounded-xl text-xs font-bold transition"
+                  >
+                    Connect in Simulated Mode
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-5 text-center">
+                <div className="text-xs text-slate-300 light:text-slate-700 leading-relaxed text-left space-y-2">
+                  <p>1. Open the link below on a device with Telegram installed.</p>
+                  <p>2. Tap <strong>Start</strong> in the Loopin bot chat.</p>
+                  <p>3. Stay on this screen — we&apos;ll detect the link automatically.</p>
+                </div>
+                {telegramDeepLink ? (
+                  <a
+                    href={telegramDeepLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block w-full py-3 px-4 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold transition"
+                  >
+                    Open Telegram Bot
+                  </a>
+                ) : (
+                  <div className="py-6 flex flex-col items-center justify-center space-y-3">
+                    <span className="w-8 h-8 border-3 border-sky-500/20 border-t-sky-500 rounded-full animate-spin" />
+                    <span className="text-[10px] text-slate-500 animate-pulse">Preparing link...</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-center space-x-2 text-xs text-slate-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
+                  <span>Waiting for /start in Telegram...</span>
+                </div>
+                {telegramConnectStatus === "error" && (
+                  <p className="text-xs text-rose-400">Could not create link. Check TELEGRAM_BOT_TOKEN or use simulated mode.</p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowTelegramConnectModal(false);
+                    setTelegramDeepLink(null);
+                    setTelegramConnectStatus(null);
+                  }}
+                  className="text-slate-500 hover:text-slate-300 text-xs font-semibold underline transition pt-2 block mx-auto"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Floating Toast Notification */}
       {toast && (
         <div
@@ -3591,7 +3941,9 @@ function AlertsPanel({
   const appOptions = [
     { key: "gmail", label: "Gmail", logo: "/001-gmail.png" },
     { key: "whatsapp", label: "WhatsApp", logo: "/002-whatsapp.png" },
+    { key: "telegram", label: "Telegram", logo: "/004-telegram.png" },
     { key: "slack", label: "Slack", logo: "/005-slack.png" },
+    { key: "teams", label: "Teams", logo: "/010-teams.svg" },
     { key: "discord", label: "Discord", logo: "/006-discord.png" },
     { key: "calendly", label: "Calendly", logo: "/008-calendly.svg" },
   ];
@@ -3599,11 +3951,13 @@ function AlertsPanel({
   const connectedApps: Record<string, boolean> = {
     gmail: !!currentUser?.integrations?.gmail?.connected && !currentUser?.integrations?.gmail?.isSimulated,
     whatsapp: !!currentUser?.integrations?.whatsapp?.connected && !currentUser?.integrations?.whatsapp?.isSimulated,
+    telegram: !!currentUser?.integrations?.telegram?.connected && !currentUser?.integrations?.telegram?.isSimulated,
     slack: !!currentUser?.integrations?.slack?.connected && !currentUser?.integrations?.slack?.isSimulated,
+    teams: !!currentUser?.integrations?.teams?.connected,
     discord: !!currentUser?.integrations?.discord?.connected && !currentUser?.integrations?.discord?.isSimulated,
     calendly: !!currentUser?.integrations?.calendly?.connected && !currentUser?.integrations?.calendly?.isSimulated,
   };
-  const monitorableAppKeys = ["gmail", "whatsapp", "slack", "discord"] as const;
+  const monitorableAppKeys = ["gmail", "whatsapp", "telegram", "slack", "teams", "discord"] as const;
   const connectedAppKeys = monitorableAppKeys.filter(key => connectedApps[key]);
 
   const confirmQueue = alerts.filter((a) => a.draft_status === "pending_confirm");
@@ -5080,6 +5434,7 @@ function SettingsPanel() {
     { id: "gmail", name: "Gmail", logo: "/001-gmail.png", connected: !!user?.integrations?.gmail?.connected },
     { id: "whatsapp", name: "WhatsApp", logo: "/002-whatsapp.png", connected: !!user?.integrations?.whatsapp?.connected },
     { id: "slack", name: "Slack", logo: "/005-slack.png", connected: !!user?.integrations?.slack?.connected },
+    { id: "teams", name: "Teams", logo: "/010-teams.svg", connected: !!user?.integrations?.teams?.connected },
     { id: "discord", name: "Discord", logo: "/006-discord.png", connected: !!user?.integrations?.discord?.connected },
   ];
 

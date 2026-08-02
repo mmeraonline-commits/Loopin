@@ -17,7 +17,7 @@ import {
 import { resolveAppUrl } from "./app-url";
 
 const APP_URL = resolveAppUrl();
-const monitorableApps = new Set(["gmail", "whatsapp", "slack", "discord"]);
+const monitorableApps = new Set(["gmail", "whatsapp", "slack", "discord", "telegram", "teams"]);
 
 type IntegrationValue = {
   connected?: boolean;
@@ -64,6 +64,9 @@ function appLogo(app: string) {
   if (app === "linkedin") return "/007-linkedin.png";
   if (app === "calendly") return "/008-calendly.svg";
   if (app === "outlook") return "/003-email.png";
+  if (app === "telegram") return "/004-telegram.png";
+  if (app === "google_calendar") return "/009-google-calendar.svg";
+  if (app === "teams") return "/010-teams.svg";
   return "/003-email.png";
 }
 
@@ -170,6 +173,70 @@ export async function fetchConnectedActivity(userId: string, apps: string[] = []
       }
     } catch (error) {
       console.error("[alert-auto-generation] WhatsApp MCP fetch failed:", error);
+    }
+  }
+
+  if (apps.includes("telegram")) {
+    try {
+      const res = await fetch(`${APP_URL}/api/telegram-mcp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ method: "telegram_get_recent_messages", userId }),
+      });
+      const json = await res.json();
+      const text = json.result?.content?.[0]?.text;
+      const messages = text ? JSON.parse(text).messages || [] : [];
+
+      for (const message of messages) {
+        activity.push({
+          id: message.id || `${message.chatName}-${message.timestamp}`,
+          app: "telegram",
+          title: message.chatName || message.from || "Telegram message",
+          description: message.body || "",
+          body: message.body || "",
+          from: message.from || "",
+          time: message.timestamp,
+          replyRef: {
+            app: "telegram",
+            chatId: message.chatId || message.id || message.from,
+            messageId: message.id,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("[alert-auto-generation] Telegram MCP fetch failed:", error);
+    }
+  }
+
+  if (apps.includes("teams")) {
+    try {
+      const res = await fetch(`${APP_URL}/api/teams-mcp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ method: "teams_get_recent_messages", userId }),
+      });
+      const json = await res.json();
+      const text = json.result?.content?.[0]?.text;
+      const messages = text ? JSON.parse(text).messages || [] : [];
+
+      for (const message of messages) {
+        activity.push({
+          id: message.id || `${message.chatName}-${message.timestamp}`,
+          app: "teams",
+          title: message.chatName || message.from || "Teams message",
+          description: message.body || message.text || "",
+          body: message.body || message.text || "",
+          from: message.from || "",
+          time: message.timestamp,
+          replyRef: {
+            app: "teams",
+            chatId: message.chatId || message.id,
+            messageId: message.id,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("[alert-auto-generation] Teams MCP fetch failed:", error);
     }
   }
 
