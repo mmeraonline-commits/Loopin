@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
     let scheduleName = `Daily Briefing — ${format(new Date(), "MMM d, yyyy")}`;
     let scheduleDesc = "Your daily communication digest and action items summary.";
     let categories = ["email", "messages", "calendar", "mentions", "tasks", "follow_ups"];
-    let apps = ["gmail", "whatsapp", "telegram", "slack", "outlook", "google_calendar"];
+    let apps = ["gmail", "whatsapp", "telegram", "slack", "outlook", "google_calendar", "notion"];
 
     // 1. Load custom schedule config if provided
     if (scheduleId) {
@@ -120,6 +120,7 @@ export async function POST(req: NextRequest) {
     const hasOutlook = !!integrations.outlook?.connected && !integrations.outlook?.isSimulated;
     const hasGoogleCalendar =
       !!integrations.google_calendar?.connected && !integrations.google_calendar?.isSimulated;
+    const hasNotion = !!integrations.notion?.connected;
 
     let gmailMessages: any[] = [];
     let whatsappMessages: any[] = [];
@@ -127,6 +128,7 @@ export async function POST(req: NextRequest) {
     let slackMessages: any[] = [];
     let outlookMessages: any[] = [];
     let calendarEvents: any[] = [];
+    let notionPages: any[] = [];
     let connectedAppsUsed: string[] = [];
 
     // 3. Fetch real Gmail data
@@ -310,13 +312,38 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    if (apps.includes("notion") && hasNotion) {
+      try {
+        const notionRes = await fetch(`${origin}/api/notion-mcp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            method: "notion_search",
+            params: { limit: 8 },
+            userId,
+          }),
+        });
+        if (notionRes.ok) {
+          const resJson = await notionRes.json();
+          const text = resJson.result?.content?.[0]?.text;
+          if (text) {
+            notionPages = JSON.parse(text).results || [];
+            if (notionPages.length > 0) connectedAppsUsed.push("Notion");
+          }
+        }
+      } catch (e) {
+        console.error("[Briefings] Notion fetch failed:", e);
+      }
+    }
+
     const hasAnyData =
       gmailMessages.length > 0 ||
       whatsappMessages.length > 0 ||
       telegramMessages.length > 0 ||
       slackMessages.length > 0 ||
       outlookMessages.length > 0 ||
-      calendarEvents.length > 0;
+      calendarEvents.length > 0 ||
+      notionPages.length > 0;
     const geminiApiKey = process.env.GEMINI_API_KEY;
 
     // 5. Generate with Gemini using real data
@@ -348,6 +375,9 @@ ${JSON.stringify(slackMessages, null, 2)}
 
 --- REAL OUTLOOK INBOX (${outlookMessages.length} messages) ---
 ${JSON.stringify(outlookMessages, null, 2)}
+
+--- REAL NOTION PAGES (${notionPages.length} items) ---
+${JSON.stringify(notionPages, null, 2)}
 
 --- CALENDAR EVENTS (${calendarEvents.length} events) ---
 ${JSON.stringify(calendarEvents, null, 2)}

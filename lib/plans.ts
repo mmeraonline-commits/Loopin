@@ -10,7 +10,8 @@ export type ChannelId =
   | "linkedin"
   | "calendly"
   | "google_calendar"
-  | "teams";
+  | "teams"
+  | "notion";
 
 export type SurfaceId = "inbox" | "aiAgent" | "alerts" | "briefing" | "followUps";
 
@@ -54,6 +55,7 @@ const ALL_CHANNELS: ChannelId[] = [
   "linkedin",
   "calendly",
   "google_calendar",
+  "notion",
 ];
 
 export const PLAN_ORDER: PlanId[] = ["starter", "pro", "business", "team"];
@@ -157,7 +159,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
       "Everything in Pro",
       "Out-of-office & after-hours replies",
       "Tone training — Advanced (docs, URLs, text)",
-      "All channels + Outlook + Calendly + Google Calendar",
+      "All channels + Outlook + Calendly + Google Calendar + Notion",
       "Unlimited alert rules",
       "500 AI actions / month",
       "Priority support",
@@ -267,6 +269,7 @@ export function channelLabel(channel: ChannelId): string {
     linkedin: "LinkedIn",
     calendly: "Calendly",
     google_calendar: "Google Calendar",
+    notion: "Notion",
   };
   return labels[channel];
 }

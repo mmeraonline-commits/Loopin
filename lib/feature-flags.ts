@@ -10,6 +10,7 @@ export type FeatureFlags = {
     telegram: boolean;
     google_calendar: boolean;
     teams: boolean;
+    notion: boolean;
   };
   surfaces: {
     aiAgent: boolean;
@@ -31,6 +32,7 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
     telegram: true,
     google_calendar: true,
     teams: true,
+    notion: true,
   },
   surfaces: {
     aiAgent: true,

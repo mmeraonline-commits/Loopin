@@ -1,24 +1,8 @@
 "use client";
 
-import { motion, type Variants } from "framer-motion";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 18 },
-  visible: { opacity: 1, y: 0 },
-};
-
-const fadeVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1 },
-};
-
-const orchestratorVariants: Variants = {
-  hidden: {},
-  visible: {},
-};
-
-/** Scroll-triggered fade/rise-in for a single block. Fires once, near viewport entry. */
+/** CSS fade/rise-in — avoids framer whileInView getting stuck at opacity 0. */
 export function Reveal({
   children,
   className,
@@ -30,21 +14,26 @@ export function Reveal({
   delay?: number;
   direction?: "up" | "none";
 }) {
+  const style = {
+    animationDelay: `${delay}s`,
+  } as CSSProperties;
+
   return (
-    <motion.div
-      className={className}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: "-80px" }}
-      variants={direction === "up" ? itemVariants : fadeVariants}
-      transition={{ duration: 0.6, delay, ease: [0.16, 1, 0.3, 1] }}
+    <div
+      className={[
+        direction === "none" ? "animate-landing-fade" : "animate-landing-reveal",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      style={style}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
 
-/** Wrap a set of `RevealItem`s to stagger their entrance as a group. */
+/** Staggered group — children should be `RevealItem`s. */
 export function RevealGroup({
   children,
   className,
@@ -55,23 +44,15 @@ export function RevealGroup({
   stagger?: number;
 }) {
   return (
-    <motion.div
+    <div
       className={className}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: "-80px" }}
-      variants={orchestratorVariants}
-      transition={{ staggerChildren: stagger }}
+      style={{ "--reveal-stagger": `${stagger}s` } as CSSProperties}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
 
 export function RevealItem({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <motion.div className={className} variants={itemVariants} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}>
-      {children}
-    </motion.div>
-  );
+  return <div className={["animate-landing-reveal", className].filter(Boolean).join(" ")}>{children}</div>;
 }

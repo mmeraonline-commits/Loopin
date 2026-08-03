@@ -74,6 +74,7 @@ export async function POST(req: NextRequest) {
     const isCalendlyConnected = !!integrations.calendly?.connected && !integrations.calendly?.isSimulated;
     const isTelegramConnected = !!integrations.telegram?.connected;
     const isTeamsConnected = !!integrations.teams?.connected;
+    const isNotionConnected = !!integrations.notion?.connected;
     const isGoogleCalendarConnected =
       !!integrations.google_calendar?.connected && !integrations.google_calendar?.isSimulated;
 
@@ -90,6 +91,7 @@ export async function POST(req: NextRequest) {
     let discordSummary = "No Discord messages synced.";
     let linkedinSummary = "No LinkedIn profile synced.";
     let calendlySummary = "No Calendly events synced.";
+    let notionSummary = "No Notion pages synced.";
 
     if (isGmailConnected) {
       const parsed = await fetchMcpText(origin, "/api/gmail-mcp", {
@@ -265,6 +267,33 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    if (isNotionConnected) {
+      const notionMeta = integrations.notion || {};
+      const defaultHint =
+        notionMeta.defaultParentPageId || notionMeta.defaultDatabaseId
+          ? `\nDefault parent page: ${notionMeta.defaultParentPageTitle || "page"} (${notionMeta.defaultParentPageId || "n/a"})\nDefault database: ${notionMeta.defaultDatabaseTitle || "n/a"} (${notionMeta.defaultDatabaseId || "n/a"})\nWhen creating pages without an explicit parent, omit parentPageId/parentDatabaseId so the server uses these defaults. Never invent page IDs.`
+          : `\nNo default parent set. Tell the user to open Integrations → Notion → Settings, search a shared page, and select it before creating pages. Never invent page IDs.`;
+
+      const parsed = await fetchMcpText(origin, "/api/notion-mcp", {
+        method: "notion_search",
+        params: { limit: 8 },
+        userId,
+      });
+      if (parsed?.results?.length) {
+        notionSummary =
+          parsed.results
+            .map(
+              (r: any) =>
+                `Title: ${r.title}\nType: ${r.object}\nID: ${r.id}\nURL: ${r.url || "n/a"}`
+            )
+            .join("\n---\n") + defaultHint;
+      } else {
+        notionSummary =
+          "Notion connected — no shared pages found yet. Ask the user to share pages/databases with the Loopin integration in Notion, then pick a default in Integrations → Notion → Settings." +
+          defaultHint;
+      }
+    }
+
     // If the user confirmed a pending action, execute it for real before chatting.
     let actionReceipt: { ok: boolean; error?: string; result?: unknown; tool?: string } | null =
       null;
@@ -421,11 +450,14 @@ ${linkedinSummary}
 
 === Calendly ===
 ${calendlySummary}
+
+=== Notion ===
+${notionSummary}
 ${actionNote}${priorActionContext}
 
 CRITICAL ACTION RULES:
 1. You CANNOT send messages or create calendar events by yourself. Draft first; a real tool runs only after user confirm.
-2. When the user asks to reply/send on Discord/Slack/Gmail/WhatsApp/Telegram/Teams/LinkedIn, book/cancel/update Calendly, or add/remind via Outlook or Google Calendar:
+2. When the user asks to reply/send on Discord/Slack/Gmail/WhatsApp/Telegram/Teams/LinkedIn, book/cancel/update Calendly, add/remind via Outlook or Google Calendar, or create/append Notion pages:
    - First return a draft and set pendingAction with the exact tool + params.
    - Ask them to confirm (they can click Confirm or type "yes"/"confirm"/"add it"/"schedule it").
 3. NEVER say a message was sent / event created / booking created unless SYSTEM ACTION RESULT says Successfully executed.
@@ -448,6 +480,7 @@ CRITICAL ACTION RULES:
 16. To refresh/list Outlook calendar beyond the synced window, use "outlook_list_events" with optional timeMin/timeMax (ISO). Still require confirm before running.
 17. For Google Calendar use "google_calendar_create_event" with the same shape as Outlook create (summary/start/end/timeZone/description). List with "google_calendar_list_events".
 18. If the user asks to share/send "the event", "the reminder", "the link", or similar after a calendar create in this chat, reuse the last known Google htmlLink or Outlook webLink from SYSTEM ACTION RESULT / RECENT ACTION RESULTS when drafting gmail/whatsapp/telegram/teams (or other) sends. Still draft + confirm before sending. Do not invent links.
+19. For Notion: use "notion_search" with query; "notion_get_page" with pageId; "notion_query_database" with databaseId; create with "notion_create_page" (title + content; omit parent to use Integrations default parent — NEVER invent page IDs); append with "notion_append_blocks" (pageId optional if default set + text). Create/append require confirm. If create fails with "not shared", tell the user to share the page in Notion and set a default under Integrations → Notion → Settings.
 
 Return EXACT JSON:
 {

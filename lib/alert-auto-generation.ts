@@ -67,6 +67,7 @@ function appLogo(app: string) {
   if (app === "telegram") return "/004-telegram.png";
   if (app === "google_calendar") return "/009-google-calendar.svg";
   if (app === "teams") return "/010-teams.svg";
+  if (app === "notion") return "/011-notion.svg";
   return "/003-email.png";
 }
 

@@ -1208,6 +1208,7 @@ function AiAgentPanel({ user }: { user: any }) {
     linkedin: "/007-linkedin.png",
     google_calendar: "/009-google-calendar.svg",
     teams: "/010-teams.svg",
+    notion: "/011-notion.svg",
   };
 
   const getAppIcon = (app: string) => {
@@ -1515,7 +1516,7 @@ function CustomMarkdownComponents() {
 // Custom Renderer helpers for Markdown formatting
 function renderInlineMarkdown(text: string) {
   const parseInlineLogos = (str: string, keyPrefix: string): React.ReactNode[] => {
-    const regex = /(gmail|whatsapp|slack|outlook|calendly|telegram|discord|linkedin|teams|google.?calendar)/gi;
+    const regex = /(gmail|whatsapp|slack|outlook|calendly|telegram|discord|linkedin|teams|notion|google.?calendar)/gi;
     const tokens = str.split(regex);
     if (tokens.length <= 1) return [str];
 
@@ -1530,6 +1531,7 @@ function renderInlineMarkdown(text: string) {
       "google calendar": "/009-google-calendar.svg",
       teams: "/010-teams.svg",
       "microsoft teams": "/010-teams.svg",
+      notion: "/011-notion.svg",
       discord: "/006-discord.png",
       linkedin: "/007-linkedin.png",
     };
@@ -2603,6 +2605,16 @@ const PLATFORMS: Platform[] = [
     badgeBg: "bg-blue-500/10 border-blue-500/20 text-blue-400"
   },
   {
+    id: "notion",
+    name: "Notion",
+    desc: "Search pages, read docs, query databases, and append notes with confirm-before-write.",
+    logo: "/011-notion.svg",
+    color: "text-slate-200",
+    bg: "from-slate-500/10 via-transparent to-slate-500/5",
+    borderGlow: "group-hover:border-slate-400/30",
+    badgeBg: "bg-slate-500/10 border-slate-500/20 text-slate-300"
+  },
+  {
     id: "custom",
     name: "Other Platforms",
     desc: "Connect to standard webhooks, custom endpoints, and other local MCP gateways.",
@@ -2688,6 +2700,13 @@ const platformTools: Record<string, Array<{ name: string; desc: string; params: 
     { name: "google_calendar_list_events", desc: "List upcoming Google Calendar events", params: "timeMin?: string, timeMax?: string" },
     { name: "google_calendar_create_event", desc: "Create a Google Calendar event", params: "summary: string, start: string, end: string, timeZone?: string, description?: string" }
   ],
+  notion: [
+    { name: "notion_search", desc: "Search Notion pages and databases", params: "query?: string, limit?: number" },
+    { name: "notion_get_page", desc: "Read a page title and plain-text content", params: "pageId: string" },
+    { name: "notion_query_database", desc: "Query rows from a database", params: "databaseId: string, limit?: number" },
+    { name: "notion_create_page", desc: "Create a page under a parent page or database", params: "title: string, content?: string, parentPageId?: string, parentDatabaseId?: string" },
+    { name: "notion_append_blocks", desc: "Append paragraph text to a page", params: "pageId: string, text: string" }
+  ],
   custom: [
     { name: "webhook_trigger", desc: "Trigger a webhook endpoint with custom payload", params: "url: string, payload: object" },
     { name: "get_mcp_capabilities", desc: "Get details on all active local MCP gateways", params: "" }
@@ -2718,6 +2737,13 @@ function IntegrationsPanel() {
   const [telegramDeepLink, setTelegramDeepLink] = useState<string | null>(null);
   const [telegramConnectStatus, setTelegramConnectStatus] = useState<string | null>(null);
   const [isConnectingTelegram, setIsConnectingTelegram] = useState(false);
+
+  // Notion default parent picker
+  const [notionSearchQuery, setNotionSearchQuery] = useState("");
+  const [notionSearchResults, setNotionSearchResults] = useState<
+    Array<{ id: string; title: string; object: string; url?: string | null }>
+  >([]);
+  const [notionSearchLoading, setNotionSearchLoading] = useState(false);
 
   // Toast Notification State
   const [toast, setToast] = useState<{ message: string; isExiting?: boolean } | null>(null);
@@ -3268,6 +3294,49 @@ function IntegrationsPanel() {
             }
           }
         }
+      } else if (platformId === "notion") {
+        if (isConnected) {
+          const res = await fetch("/api/notion-connect", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "disconnect", userId: user.id }),
+          });
+          if (res.ok) {
+            await refreshUser();
+            showToast("Notion disconnected");
+          } else {
+            const data = await res.json().catch(() => ({}));
+            showToast(data.error || "Failed to disconnect Notion");
+          }
+        } else {
+          const res = await fetch("/api/notion-connect");
+          const data = await res.json();
+          const clientId =
+            data.clientId && data.clientId !== "your_notion_client_id_here"
+              ? data.clientId
+              : "";
+          if (data.configured && clientId) {
+            const redirectUri = `${window.location.origin}/auth/notion-callback`;
+            window.location.assign(
+              `https://api.notion.com/v1/oauth/authorize?client_id=${encodeURIComponent(clientId)}&response_type=code&owner=user&redirect_uri=${encodeURIComponent(redirectUri)}`
+            );
+          } else if (data.configured && data.authUrl) {
+            window.location.assign(data.authUrl);
+          } else {
+            const sim = await fetch("/api/notion-connect", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "connect-simulated", userId: user.id }),
+            });
+            if (sim.ok) {
+              await refreshUser();
+              showToast("Notion connected (simulated). Share pages with Loopin after live OAuth.");
+            } else {
+              const err = await sim.json().catch(() => ({}));
+              showToast(err.error || "Add NOTION_CLIENT_ID and NOTION_CLIENT_SECRET to .env.local");
+            }
+          }
+        }
       } else {
         // For other platforms (simulated state toggler)
         const updatedIntegrations = {
@@ -3532,6 +3601,148 @@ function IntegrationsPanel() {
                   </div>
                 </div>
               )}
+
+              {activeSettingsPlatform.id === "notion" && (
+                <div className="p-4 rounded-2xl border border-white/10 light:border-slate-200 bg-white/[0.02] light:bg-white space-y-3">
+                  <p className="text-xs text-slate-300 light:text-slate-700 leading-relaxed">
+                    Pick a default parent page (or database) for new content. Pages must be{" "}
+                    <span className="font-semibold">shared with the Loopin integration</span> in Notion first.
+                  </p>
+                  {(user as { integrations?: { notion?: {
+                    defaultParentPageTitle?: string;
+                    defaultParentPageId?: string;
+                    defaultDatabaseTitle?: string;
+                    defaultDatabaseId?: string;
+                  } } })?.integrations?.notion?.defaultParentPageId ||
+                  (user as { integrations?: { notion?: { defaultDatabaseId?: string } } })?.integrations?.notion
+                    ?.defaultDatabaseId ? (
+                    <p className="text-[11px] text-emerald-400">
+                      Default:{" "}
+                      {(user as { integrations?: { notion?: { defaultParentPageTitle?: string; defaultDatabaseTitle?: string } } })
+                        ?.integrations?.notion?.defaultParentPageTitle ||
+                        (user as { integrations?: { notion?: { defaultDatabaseTitle?: string } } })?.integrations
+                          ?.notion?.defaultDatabaseTitle ||
+                        "selected"}{" "}
+                      <span className="text-slate-500 font-mono text-[10px]">
+                        (
+                        {(user as { integrations?: { notion?: { defaultParentPageId?: string; defaultDatabaseId?: string } } })
+                          ?.integrations?.notion?.defaultParentPageId ||
+                          (user as { integrations?: { notion?: { defaultDatabaseId?: string } } })?.integrations?.notion
+                            ?.defaultDatabaseId}
+                        )
+                      </span>
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-amber-400/90">
+                      No default parent set — create-page will fail until you choose one.
+                    </p>
+                  )}
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={notionSearchQuery}
+                      onChange={(e) => setNotionSearchQuery(e.target.value)}
+                      placeholder="Search shared pages or databases…"
+                      className="flex-1 px-3 py-2 rounded-xl text-xs bg-black/30 light:bg-slate-100 border border-white/10 light:border-slate-200 text-white light:text-slate-900"
+                    />
+                    <button
+                      type="button"
+                      disabled={notionSearchLoading || !user?.id}
+                      onClick={async () => {
+                        if (!user?.id) return;
+                        setNotionSearchLoading(true);
+                        try {
+                          const res = await fetch("/api/notion-mcp", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              method: "notion_search",
+                              params: { query: notionSearchQuery, limit: 15 },
+                              userId: user.id,
+                            }),
+                          });
+                          const json = await res.json();
+                          if (!res.ok || json.error) {
+                            showToast(
+                              json.error?.message ||
+                                json.error ||
+                                "Search failed — share pages with Loopin in Notion"
+                            );
+                            setNotionSearchResults([]);
+                          } else {
+                            const text = json.result?.content?.[0]?.text;
+                            const parsed = text ? JSON.parse(text) : { results: [] };
+                            setNotionSearchResults(parsed.results || []);
+                            if (!(parsed.results || []).length) {
+                              showToast("No shared pages found. Share a page with Loopin in Notion.");
+                            }
+                          }
+                        } catch (err) {
+                          showToast(err instanceof Error ? err.message : "Notion search failed");
+                        } finally {
+                          setNotionSearchLoading(false);
+                        }
+                      }}
+                      className="px-3 py-2 rounded-xl text-[11px] font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/25 disabled:opacity-50"
+                    >
+                      {notionSearchLoading ? "Searching…" : "Search"}
+                    </button>
+                  </div>
+                  {notionSearchResults.length > 0 && (
+                    <ul className="max-h-48 overflow-y-auto space-y-1.5">
+                      {notionSearchResults.map((item) => (
+                        <li key={item.id}>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (!user?.id) return;
+                              setUpdatingPlatform("notion-defaults");
+                              try {
+                                const isDb = item.object === "database";
+                                const res = await fetch("/api/notion-connect", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    action: "save-defaults",
+                                    userId: user.id,
+                                    defaultParentPageId: isDb ? null : item.id,
+                                    defaultParentPageTitle: isDb ? null : item.title,
+                                    defaultDatabaseId: isDb ? item.id : null,
+                                    defaultDatabaseTitle: isDb ? item.title : null,
+                                  }),
+                                });
+                                const data = await res.json().catch(() => ({}));
+                                if (!res.ok || data.error) {
+                                  showToast(data.error || "Failed to save default");
+                                } else {
+                                  await refreshUser();
+                                  showToast(
+                                    `Default ${isDb ? "database" : "page"} set: ${item.title}`
+                                  );
+                                  setNotionSearchResults([]);
+                                }
+                              } catch (err) {
+                                showToast(err instanceof Error ? err.message : "Failed to save");
+                              } finally {
+                                setUpdatingPlatform(null);
+                              }
+                            }}
+                            className="w-full text-left px-3 py-2 rounded-xl text-xs bg-white/[0.03] light:bg-slate-50 border border-white/5 light:border-slate-200 hover:border-emerald-500/30 transition"
+                          >
+                            <span className="font-semibold text-white light:text-slate-900">
+                              {item.title}
+                            </span>
+                            <span className="ml-2 text-[10px] uppercase text-slate-500">
+                              {item.object}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
               <div className="space-y-1">
                 <h4 className="text-xs font-bold text-white light:text-slate-900 uppercase tracking-wider flex items-center space-x-1.5">
                   <Settings2 className="w-4 h-4 text-brand-accent" />

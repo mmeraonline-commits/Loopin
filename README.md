@@ -81,6 +81,10 @@ GOOGLE_CLIENT_SECRET=your_google_oauth_client_secret
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token
 TELEGRAM_WEBHOOK_SECRET=optional_webhook_secret
 
+# Notion OAuth (Integrations → Notion) — Business+ plans
+NOTION_CLIENT_ID=your_notion_client_id
+NOTION_CLIENT_SECRET=your_notion_client_secret
+
 SENT_DM_API_KEY=your_sentdm_api_key
 SENT_DM_TEMPLATE_ID=your_sentdm_template_id
 ```
@@ -90,7 +94,7 @@ SENT_DM_TEMPLATE_ID=your_sentdm_template_id
 - Add `http://localhost:3000/auth/gmail-callback` and `http://localhost:3000/auth/google-calendar-callback` as authorized redirect URIs.
 - Use the same `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env.local`.
 - For Telegram: create a bot with BotFather, set `TELEGRAM_BOT_TOKEN`, and point the webhook to `{APP_URL}/api/telegram-webhook` (optional secret header via `TELEGRAM_WEBHOOK_SECRET`).
-
+- For Notion: create a public integration at notion.so/my-integrations, set redirect `{APP_URL}/auth/notion-callback`, and add `NOTION_CLIENT_ID` / `NOTION_CLIENT_SECRET`. After connect, share pages/databases with the integration.
 4. Prepare the database.
 
 - Apply the SQL in `db/alerts.sql` and `db/admin.sql` (and `db/waitlist.sql` if needed) to the InsForge project.

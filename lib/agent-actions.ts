@@ -14,6 +14,8 @@ const SEND_TOOLS = new Set([
   "teams_send_message",
   "teams_reply_message",
   "linkedin_post_share",
+  "notion_create_page",
+  "notion_append_blocks",
 ]);
 
 export type AgentAction = {
@@ -40,6 +42,11 @@ const ALLOWED_TOOLS = new Set([
   "outlook_list_events",
   "google_calendar_list_events",
   "google_calendar_create_event",
+  "notion_search",
+  "notion_get_page",
+  "notion_query_database",
+  "notion_create_page",
+  "notion_append_blocks",
 ]);
 
 const TOOL_ROUTES: Record<string, string> = {
@@ -61,6 +68,11 @@ const TOOL_ROUTES: Record<string, string> = {
   outlook_list_events: "/api/outlook-mcp",
   google_calendar_list_events: "/api/google-calendar-mcp",
   google_calendar_create_event: "/api/google-calendar-mcp",
+  notion_search: "/api/notion-mcp",
+  notion_get_page: "/api/notion-mcp",
+  notion_query_database: "/api/notion-mcp",
+  notion_create_page: "/api/notion-mcp",
+  notion_append_blocks: "/api/notion-mcp",
 };
 
 export function isConfirmPrompt(text: string) {
@@ -111,10 +123,11 @@ export async function executeAgentAction(
     if (!params.text && params.body) params.text = params.body;
     if (!params.text && params.content) params.text = params.content;
   }
-  if (action.tool === "google_calendar_create_event") {
-    if (!params.summary && params.title) params.summary = params.title;
-    if (!params.summary && params.subject) params.summary = params.subject;
-    if (!params.description && params.body) params.description = params.body;
+  if (action.tool === "notion_create_page" || action.tool === "notion_append_blocks") {
+    if (!params.content && params.body) params.content = params.body;
+    if (!params.text && params.content && action.tool === "notion_append_blocks") {
+      params.text = params.content;
+    }
   }
   if (action.tool === "outlook_create_event") {
     if (!params.summary && params.title) params.summary = params.title;
