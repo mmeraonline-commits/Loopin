@@ -14,8 +14,8 @@ export function ProblemSolution() {
               <span className="text-xs font-bold tracking-[0.14em] text-slate-400 uppercase">The problem</span>
               <h3 className="font-display text-2xl font-bold text-brand-ink sm:text-3xl">Your day is scattered across apps.</h3>
               <p className="text-base leading-relaxed text-slate-600">
-                Client emails, WhatsApp check-ins, Slack pings — important things slip through while you&apos;re context-switching between
-                them all. Every app wants your full attention, all day.
+                Client emails, WhatsApp check-ins, Slack and Teams pings — important things slip through while you&apos;re context-switching between
+                eleven apps. Every channel wants your full attention, all day.
               </p>
             </div>
           </Reveal>
@@ -28,7 +28,7 @@ export function ProblemSolution() {
               <span className="text-xs font-bold tracking-[0.14em] text-brand-lime uppercase">With Loopin</span>
               <h3 className="font-display text-2xl font-bold text-white sm:text-3xl">One brief. One inbox. One you.</h3>
               <p className="text-base leading-relaxed text-white/75">
-                Loopin reads every channel, briefs you every morning, drafts replies in your voice, and only pings you when something
+                Loopin reads every channel — email, chat, calendar, and docs — briefs you every morning, drafts replies in your voice, and only pings you when something
                 truly needs a decision.
               </p>
             </div>

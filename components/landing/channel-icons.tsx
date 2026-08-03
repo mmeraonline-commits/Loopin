@@ -62,3 +62,41 @@ export function LinkedInIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+export function TelegramIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+      <path d="M21.9 4.6c.2-.9-.6-1.5-1.4-1.2L2.6 9.9c-.9.35-.86 1.6.07 1.86l4.5 1.4 1.75 5.4c.24.72 1.06.96 1.66.5l2.5-2.1 4.64 3.42c.68.5 1.65.13 1.8-.68l2.98-15.1zM9.8 13.15l8.5-7.55c.34-.3.85.06.58.44l-7.15 8.85-.32 3.55-1.6-5.29z" />
+    </svg>
+  );
+}
+
+export function GoogleCalendarIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M3 10h18M8 3v4M16 3v4" strokeLinecap="round" />
+      <path d="M9.2 15.2l2 2 3.6-4.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function TeamsIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+      <path d="M14.5 6.5a2.75 2.75 0 11-5.5 0 2.75 2.75 0 015.5 0z" />
+      <path d="M4 10.2h7.4c.4 0 .72.32.72.72v5.33a5.7 5.7 0 01-8.82 0v-5.33c0-.4.32-.72.72-.72z" />
+      <path d="M18.6 8.2a2 2 0 11-4 0 2 2 0 014 0z" opacity=".8" />
+      <path d="M13.5 11h6.1c.38 0 .7.32.7.72v4.03a4.75 4.75 0 01-7.35 3.98c.22-.66.35-1.36.35-2.09v-5.9c0-.44.06-.86.2-1.24z" opacity=".8" />
+    </svg>
+  );
+}
+
+export function NotionIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" {...props}>
+      <rect x="4" y="4" width="16" height="16" rx="2.5" />
+      <path d="M8.5 16V8.8l7 7.2V8.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}

@@ -102,7 +102,7 @@ export default function AdminPlanCodesPage() {
     <div className="space-y-6 max-w-5xl">
       <div>
         <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-          <Ticket className="w-6 h-6 text-violet-500" />
+          <Ticket className="w-6 h-6 text-brand-primary" />
           Plan Codes
         </h1>
         <p className="text-sm text-slate-500 mt-1">
@@ -188,7 +188,7 @@ export default function AdminPlanCodesPage() {
         <button
           type="submit"
           disabled={creating}
-          className="sm:col-span-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold py-2.5 disabled:opacity-50"
+          className="sm:col-span-2 rounded-xl bg-brand-primary hover:bg-brand-secondary text-white text-sm font-bold py-2.5 disabled:opacity-50"
         >
           {creating ? "Creating…" : "Create code"}
         </button>

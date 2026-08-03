@@ -5,20 +5,27 @@ import {
   CalendlyIcon,
   DiscordIcon,
   GmailIcon,
+  GoogleCalendarIcon,
   LinkedInIcon,
+  NotionIcon,
   OutlookIcon,
   SlackIcon,
+  TeamsIcon,
+  TelegramIcon,
   WhatsAppIcon,
 } from "./channel-icons";
 import { Reveal } from "./reveal";
 import { SectionHeading } from "./section-heading";
 
 const HUB_CHANNELS = [
-  { name: "Gmail", icon: GmailIcon, color: "text-rose-500", x: 50, y: 8 },
-  { name: "WhatsApp", icon: WhatsAppIcon, color: "text-emerald-500", x: 88, y: 32 },
-  { name: "Slack", icon: SlackIcon, color: "text-[#4A154B]", x: 82, y: 78 },
-  { name: "Discord", icon: DiscordIcon, color: "text-indigo-500", x: 18, y: 78 },
-  { name: "Calendly", icon: CalendlyIcon, color: "text-brand-accent", x: 12, y: 32 },
+  { name: "Gmail", icon: GmailIcon, color: "text-rose-500", x: 50, y: 4, floatDelay: "0s" },
+  { name: "WhatsApp", icon: WhatsAppIcon, color: "text-emerald-500", x: 84, y: 16, floatDelay: "0.6s" },
+  { name: "Slack", icon: SlackIcon, color: "text-[#4A154B]", x: 96, y: 50, floatDelay: "1.2s" },
+  { name: "Telegram", icon: TelegramIcon, color: "text-sky-500", x: 84, y: 84, floatDelay: "1.8s" },
+  { name: "Notion", icon: NotionIcon, color: "text-slate-800", x: 50, y: 96, floatDelay: "2.4s" },
+  { name: "Teams", icon: TeamsIcon, color: "text-indigo-500", x: 16, y: 84, floatDelay: "3s" },
+  { name: "Google Calendar", icon: GoogleCalendarIcon, color: "text-blue-600", x: 4, y: 50, floatDelay: "3.6s" },
+  { name: "Discord", icon: DiscordIcon, color: "text-indigo-500", x: 16, y: 16, floatDelay: "4.2s" },
 ];
 
 const STACK_ROWS = [
@@ -32,22 +39,30 @@ const STACK_ROWS = [
   },
   {
     label: "Messaging",
-    blurb: "Chats & DMs",
+    blurb: "Chats, DMs & groups",
     items: [
       { name: "WhatsApp", icon: WhatsAppIcon, color: "text-emerald-500" },
       { name: "Slack", icon: SlackIcon, color: "text-[#4A154B]" },
+      { name: "Telegram", icon: TelegramIcon, color: "text-sky-500" },
       { name: "Discord", icon: DiscordIcon, color: "text-indigo-500" },
     ],
   },
   {
-    label: "Calendar",
-    blurb: "Scheduling",
-    items: [{ name: "Calendly", icon: CalendlyIcon, color: "text-brand-accent" }],
+    label: "Meetings",
+    blurb: "Calendar & calls",
+    items: [
+      { name: "Google Calendar", icon: GoogleCalendarIcon, color: "text-blue-600" },
+      { name: "Teams", icon: TeamsIcon, color: "text-indigo-500" },
+      { name: "Calendly", icon: CalendlyIcon, color: "text-brand-accent" },
+    ],
   },
   {
-    label: "Network",
-    blurb: "Professional",
-    items: [{ name: "LinkedIn", icon: LinkedInIcon, color: "text-sky-700" }],
+    label: "Docs & network",
+    blurb: "Knowledge & contacts",
+    items: [
+      { name: "Notion", icon: NotionIcon, color: "text-slate-800" },
+      { name: "LinkedIn", icon: LinkedInIcon, color: "text-sky-700" },
+    ],
   },
 ];
 
@@ -66,7 +81,7 @@ export function IntegrationsSection() {
               <span className="text-brand-primary">you already live in.</span>
             </>
           }
-          description="Connect Gmail, WhatsApp, and Slack in minutes — then add Discord, Outlook, Calendly, and LinkedIn as you grow."
+          description="11 channels today — email, chat, meetings, and docs. Connect Gmail, WhatsApp, or Telegram in minutes, then add Slack, Teams, Notion, and more as you grow."
           className="mb-16"
         />
 
@@ -82,11 +97,12 @@ export function IntegrationsSection() {
               {HUB_CHANNELS.map((ch) => (
                 <path
                   key={ch.name}
+                  className="animate-landing-dash"
                   d={`M 50 50 Q ${(ch.x + 50) / 2} ${(ch.y + 50) / 2 - 8} ${ch.x} ${ch.y}`}
                   stroke="#2D6A54"
                   strokeWidth="0.35"
                   strokeOpacity="0.35"
-                  strokeDasharray="1.2 1.2"
+                  strokeDasharray="1.6 1.6"
                 />
               ))}
             </svg>
@@ -106,10 +122,12 @@ export function IntegrationsSection() {
                 className="absolute z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1.5"
                 style={{ left: `${ch.x}%`, top: `${ch.y}%` }}
               >
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-900/10 bg-white shadow-[0_8px_30px_rgba(26,67,53,0.08)] transition-transform duration-300 hover:-translate-y-0.5 sm:h-16 sm:w-16">
-                  <ch.icon className={`h-6 w-6 ${ch.color}`} />
+                <div className="animate-landing-float flex flex-col items-center gap-1.5" style={{ animationDelay: ch.floatDelay }}>
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-900/10 bg-white shadow-[0_8px_30px_rgba(26,67,53,0.08)] transition-transform duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_36px_rgba(45,106,84,0.16)] sm:h-16 sm:w-16">
+                    <ch.icon className={`h-6 w-6 ${ch.color}`} />
+                  </div>
+                  <span className="text-[10px] font-semibold whitespace-nowrap text-slate-500 sm:text-xs">{ch.name}</span>
                 </div>
-                <span className="text-[10px] font-semibold text-slate-500 sm:text-xs">{ch.name}</span>
               </div>
             ))}
           </div>
@@ -130,7 +148,7 @@ export function IntegrationsSection() {
               <span className="text-brand-primary">one calm workspace.</span>
             </>
           }
-          description="Email, chats, calendar, and network — Loopin reads them together so your brief and drafts have full context."
+          description="Email, chats, meetings, and docs — Loopin reads them together so your brief and drafts have full context."
           className="mb-14"
         />
 

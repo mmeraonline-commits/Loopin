@@ -20,35 +20,37 @@
 }
 
 :root {
-  --background: #030712;
+  /* Dark chrome — deep forest (aligned with brand-ink / brand-primary) */
+  --background: #0B1612;
   --foreground: #f3f4f6;
-  --sidebar-bg: #090d1a;
-  --border-color: rgba(255, 255, 255, 0.05);
-  --border-color-rich: rgba(255, 255, 255, 0.1);
-  --card-bg: rgba(255, 255, 255, 0.02);
-  --card-bg-premium-gradient: radial-gradient(120% 120% at 50% 10%, rgba(9, 13, 26, 0.75) 45%, rgba(26, 67, 53, 0.12) 100%);
-  --text-main: #cbd5e1; /* slate-300 */
-  --text-muted: #94a3b8; /* slate-400 */
-  --text-muted-darker: #64748b; /* slate-500 */
+  --sidebar-bg: #0F1C17;
+  --border-color: rgba(228, 242, 122, 0.06);
+  --border-color-rich: rgba(45, 106, 84, 0.28);
+  --card-bg: rgba(26, 67, 53, 0.18);
+  --card-bg-premium-gradient: radial-gradient(120% 120% at 50% 10%, rgba(15, 28, 23, 0.92) 40%, rgba(26, 67, 53, 0.22) 100%);
+  --text-main: #d1e0d9;
+  --text-muted: #94a89e;
+  --text-muted-darker: #6b8077;
   --text-header: #ffffff;
-  --glass-bg: rgba(9, 13, 26, 0.6);
-  --glass-border: rgba(255, 255, 255, 0.05);
-  --grid-line: rgba(255, 255, 255, 0.015);
+  --glass-bg: rgba(15, 28, 23, 0.72);
+  --glass-border: rgba(45, 106, 84, 0.22);
+  --grid-line: rgba(228, 242, 122, 0.04);
 }
 
 html.light {
+  /* Light chrome — mint / white (landing system) */
   --background: #F2F9F6;
-  --foreground: #1A1A1A;
+  --foreground: #12211C;
   --sidebar-bg: #ffffff;
   --border-color: rgba(26, 67, 53, 0.08);
   --border-color-rich: rgba(26, 67, 53, 0.14);
   --card-bg: #ffffff;
-  --card-bg-premium-gradient: radial-gradient(120% 120% at 50% 10%, rgba(255, 255, 255, 0.9) 45%, rgba(26, 67, 53, 0.06) 100%);
-  --text-main: #334155; /* slate-700 */
-  --text-muted: #475569; /* slate-600 */
-  --text-muted-darker: #64748b; /* slate-500 */
-  --text-header: #1A1A1A;
-  --glass-bg: rgba(255, 255, 255, 0.8);
+  --card-bg-premium-gradient: radial-gradient(120% 120% at 50% 10%, rgba(255, 255, 255, 0.95) 45%, rgba(26, 67, 53, 0.06) 100%);
+  --text-main: #334155;
+  --text-muted: #475569;
+  --text-muted-darker: #64748b;
+  --text-header: #12211C;
+  --glass-bg: rgba(255, 255, 255, 0.85);
   --glass-border: rgba(26, 67, 53, 0.1);
   --grid-line: rgba(26, 67, 53, 0.04);
 }
@@ -66,14 +68,14 @@ body {
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #030712;
+  background: var(--background);
 }
 ::-webkit-scrollbar-thumb {
-  background: #1f2937;
+  background: rgba(45, 106, 84, 0.45);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #374151;
+  background: rgba(45, 106, 84, 0.65);
 }
 
 html.light ::-webkit-scrollbar-track {
@@ -109,9 +111,31 @@ html.dark .glass-premium {
 }
 
 .text-gradient {
-  background: linear-gradient(135deg, #ffffff 0%, #c7d2fe 55%, #818cf8 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #E4F27A 55%, #2D6A54 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+/* App surface helpers (brand system) */
+.app-surface {
+  background-color: var(--sidebar-bg);
+  border: 1px solid var(--border-color);
+}
+.app-page {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+.btn-brand {
+  background-color: #1A4335;
+  color: #ffffff;
+}
+.btn-brand:hover {
+  background-color: #15523F;
+}
+.focus-brand:focus,
+.focus-brand:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(45, 106, 84, 0.45);
 }
 
 html.light .text-gradient {
@@ -214,6 +238,28 @@ html.light .bg-\[\#0a0f1d\] {
   background-color: var(--sidebar-bg) !important;
 }
 html.light .bg-\[\#070b16\] {
+  background-color: var(--sidebar-bg) !important;
+}
+html.light .bg-\[\#070b17\] {
+  background-color: var(--background) !important;
+}
+html.light .bg-\[\#0d111e\] {
+  background-color: var(--sidebar-bg) !important;
+}
+html.light .bg-\[\#0a0e17\] {
+  background-color: var(--background) !important;
+}
+
+/* Dark mode: map legacy navy hex utilities → forest chrome */
+html.dark .bg-\[\#030712\],
+html.dark .bg-\[\#070b17\],
+html.dark .bg-\[\#0a0e17\] {
+  background-color: var(--background) !important;
+}
+html.dark .bg-\[\#090d1a\],
+html.dark .bg-\[\#0a0f1d\],
+html.dark .bg-\[\#070b16\],
+html.dark .bg-\[\#0d111e\] {
   background-color: var(--sidebar-bg) !important;
 }
 html.light .border-white\/5 {
@@ -432,12 +478,61 @@ html.light .via-\[\#0a0f1d\] {
   animation: landing-fade 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* Infinite logo/channel marquee — duplicate content twice, translate -50%. */
+@keyframes landing-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-landing-marquee {
+  animation: landing-marquee 36s linear infinite;
+}
+
+.landing-marquee-track:hover .animate-landing-marquee {
+  animation-play-state: paused;
+}
+
+/* Gentle bob for radial hub nodes. */
+@keyframes landing-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+.animate-landing-float {
+  animation: landing-float 5s ease-in-out infinite;
+}
+
+/* Animated dashes flowing along connection arcs. */
+@keyframes landing-dash {
+  to {
+    stroke-dashoffset: -3.2;
+  }
+}
+
+.animate-landing-dash {
+  animation: landing-dash 2.4s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-landing-reveal,
   .animate-landing-fade {
     animation: none;
     opacity: 1;
     transform: none;
+  }
+  .animate-landing-marquee,
+  .animate-landing-float,
+  .animate-landing-dash {
+    animation: none;
   }
 }
 

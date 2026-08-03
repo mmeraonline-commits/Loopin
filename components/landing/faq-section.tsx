@@ -16,7 +16,7 @@ const FAQS = [
   },
   {
     q: "Which channels does Loopin support today?",
-    a: "Gmail and WhatsApp on Starter, with Slack and Discord on Pro. Outlook, Calendly, and LinkedIn roll out on Business and Team plans.",
+    a: "11 channels: Gmail, WhatsApp, Slack, Outlook, Discord, LinkedIn, Calendly, Telegram, Google Calendar, Microsoft Teams, and Notion. Gmail and WhatsApp are on Starter; Pro adds Slack, Discord, and conversation mode; Business and Team unlock the rest including Teams, Notion, and Calendly.",
   },
   {
     q: "What's included on each plan?",

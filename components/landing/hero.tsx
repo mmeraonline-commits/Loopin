@@ -4,7 +4,15 @@ import { useAuth } from "@/components/auth-provider";
 import { CheckCircle2, Loader2, Sparkles } from "lucide-react";
 import { Reveal } from "./reveal";
 import { CtaButton } from "./cta-button";
-import { GmailIcon, SlackIcon, WhatsAppIcon } from "./channel-icons";
+import {
+  DiscordIcon,
+  GmailIcon,
+  NotionIcon,
+  SlackIcon,
+  TeamsIcon,
+  TelegramIcon,
+  WhatsAppIcon,
+} from "./channel-icons";
 
 const TRUST_ITEMS = ["OAuth-secured connections", "Confirm-before-send, always", "No credit card required"];
 
@@ -12,6 +20,10 @@ const CONNECTED_CHANNELS = [
   { name: "Gmail", icon: GmailIcon, color: "text-rose-500" },
   { name: "WhatsApp", icon: WhatsAppIcon, color: "text-emerald-500" },
   { name: "Slack", icon: SlackIcon, color: "text-[#4A154B]" },
+  { name: "Telegram", icon: TelegramIcon, color: "text-sky-500" },
+  { name: "Teams", icon: TeamsIcon, color: "text-indigo-500" },
+  { name: "Discord", icon: DiscordIcon, color: "text-indigo-400" },
+  { name: "Notion", icon: NotionIcon, color: "text-slate-800" },
 ];
 
 export function Hero() {
@@ -48,7 +60,7 @@ export function Hero() {
 
           <Reveal delay={0.12}>
             <p className="mt-6 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
-              One calm daily brief across Gmail, WhatsApp, and Slack — with drafts that sound like you and nothing sent without your OK.
+              One calm daily brief across all 11 channels — Gmail and Outlook to Slack, Teams, Telegram, WhatsApp, Discord, and Notion — with drafts that sound like you and nothing sent without your OK.
             </p>
           </Reveal>
 
@@ -111,6 +123,10 @@ function ProductStage({ firstName }: { firstName?: string }) {
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                 </div>
               ))}
+              <div className="flex items-center justify-between rounded-lg border border-dashed border-emerald-900/15 bg-white/60 p-2">
+                <span className="text-[11px] font-medium text-slate-500">+ 4 more channels</span>
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              </div>
             </div>
           </div>
           <div className="space-y-2">
@@ -134,7 +150,7 @@ function ProductStage({ firstName }: { firstName?: string }) {
               <h3 className="text-lg font-bold text-brand-ink">
                 {firstName ? `Today's brief for ${firstName}` : "Today's brief"}
               </h3>
-              <p className="text-xs text-slate-500">Across Gmail, WhatsApp, and Slack</p>
+              <p className="text-xs text-slate-500">Across email, chat, calendar, and docs</p>
             </div>
             <span className="w-fit rounded-md border border-emerald-900/10 bg-brand-mint-soft px-2.5 py-1 text-[10px] font-semibold text-brand-primary">
               2 need your review

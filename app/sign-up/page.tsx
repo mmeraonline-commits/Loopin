@@ -152,10 +152,10 @@ export default function SignUp() {
   };
 
   return (
-    <div className="min-h-screen text-slate-200 bg-[#030712] relative overflow-hidden font-sans flex items-center justify-center px-6 py-12">
+    <div className="min-h-screen text-slate-200 bg-[#0B1612] relative overflow-hidden font-sans flex items-center justify-center px-6 py-12">
       {/* Background ambient glows */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-900/15 animate-pulse-glow z-0 pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-blue-900/15 animate-pulse-glow z-0 pointer-events-none" style={{ animationDelay: "2s" }}></div>
+      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-brand-primary/25 animate-pulse-glow z-0 pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-brand-accent/20 animate-pulse-glow z-0 pointer-events-none" style={{ animationDelay: "2s" }}></div>
 
       {/* Background grid lines */}
       <div className="absolute inset-0 grid-bg opacity-40 pointer-events-none z-0"></div>
@@ -286,7 +286,7 @@ export default function SignUp() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full mt-2 py-3 px-6 bg-gradient-to-r from-emerald-800 to-emerald-700 hover:from-emerald-700 hover:to-emerald-600 text-white font-bold rounded-xl text-sm transition duration-200 transform active:scale-[0.98] cursor-pointer flex items-center justify-center"
+                className="w-full mt-2 py-3 px-6 bg-brand-primary hover:bg-brand-secondary text-white font-bold rounded-xl text-sm transition duration-200 transform active:scale-[0.98] cursor-pointer flex items-center justify-center"
               >
                 {loading ? (
                   <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
@@ -371,7 +371,7 @@ export default function SignUp() {
                   type="button"
                   disabled={loading || !phoneNumber.trim()}
                   onClick={handleSendOtp}
-                  className="w-full py-3 px-6 bg-gradient-to-r from-emerald-800 to-emerald-700 hover:from-emerald-700 hover:to-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm transition duration-200 transform active:scale-[0.98] cursor-pointer flex items-center justify-center"
+                  className="w-full py-3 px-6 bg-brand-primary hover:bg-brand-secondary disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm transition duration-200 transform active:scale-[0.98] cursor-pointer flex items-center justify-center"
                 >
                   {loading ? (
                     <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
@@ -427,7 +427,7 @@ export default function SignUp() {
                   type="button"
                   disabled={loading || otpCode.length !== 6}
                   onClick={handleVerifyOtp}
-                  className="w-full py-3 px-6 bg-gradient-to-r from-emerald-800 to-emerald-700 hover:from-emerald-700 hover:to-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm transition duration-200 transform active:scale-[0.98] cursor-pointer flex items-center justify-center"
+                  className="w-full py-3 px-6 bg-brand-primary hover:bg-brand-secondary disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm transition duration-200 transform active:scale-[0.98] cursor-pointer flex items-center justify-center"
                 >
                   {loading ? (
                     <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">

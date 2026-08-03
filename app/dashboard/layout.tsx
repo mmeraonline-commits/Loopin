@@ -47,47 +47,47 @@ const mainNavItems: NavItem[] = [
     tabKey: "dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
-    iconBg: "bg-blue-100 dark:bg-blue-900/40",
-    iconColor: "text-blue-500 dark:text-blue-400",
+    iconBg: "bg-brand-mint dark:bg-brand-primary/30",
+    iconColor: "text-brand-primary dark:text-brand-lime",
   },
   {
     name: "AI Agent",
     tabKey: "ai-agent",
     href: "/dashboard?tab=ai-agent",
     icon: BrainCircuit,
-    iconBg: "bg-violet-100 dark:bg-violet-900/40",
-    iconColor: "text-violet-500 dark:text-violet-400",
+    iconBg: "bg-emerald-100 dark:bg-emerald-900/30",
+    iconColor: "text-brand-accent dark:text-emerald-300",
   },
   {
     name: "Briefing",
     tabKey: "briefing",
     href: "/dashboard?tab=briefing",
     icon: Newspaper,
-    iconBg: "bg-orange-100 dark:bg-orange-900/40",
-    iconColor: "text-orange-500 dark:text-orange-400",
+    iconBg: "bg-lime-100 dark:bg-lime-900/20",
+    iconColor: "text-brand-lime-deep dark:text-brand-lime",
   },
   {
     name: "Inbox",
     tabKey: "inbox",
     href: "/dashboard/inbox",
     icon: Inbox,
-    iconBg: "bg-sky-100 dark:bg-sky-900/40",
-    iconColor: "text-sky-500 dark:text-sky-400",
+    iconBg: "bg-teal-100 dark:bg-teal-900/30",
+    iconColor: "text-teal-700 dark:text-teal-300",
   },
   {
     name: "Integrations",
     tabKey: "integrations",
     href: "/dashboard?tab=integrations",
     icon: Plug,
-    iconBg: "bg-teal-100 dark:bg-teal-900/40",
-    iconColor: "text-teal-500 dark:text-teal-400",
+    iconBg: "bg-brand-mint-soft dark:bg-white/5",
+    iconColor: "text-brand-secondary dark:text-emerald-400",
   },
   {
     name: "Alerts",
     tabKey: "alerts",
     href: "/dashboard?tab=alerts",
     icon: Bell,
-    iconBg: "bg-rose-100 dark:bg-rose-900/40",
+    iconBg: "bg-rose-100 dark:bg-rose-900/30",
     iconColor: "text-rose-500 dark:text-rose-400",
     dot: true,
   },
@@ -96,8 +96,8 @@ const mainNavItems: NavItem[] = [
     tabKey: "settings",
     href: "/dashboard?tab=settings",
     icon: Settings,
-    iconBg: "bg-slate-100 dark:bg-slate-800",
-    iconColor: "text-slate-500 dark:text-slate-400",
+    iconBg: "bg-slate-100 dark:bg-white/5",
+    iconColor: "text-slate-600 dark:text-slate-300",
   },
 ];
 
@@ -106,8 +106,8 @@ const pricingNavItem: NavItem = {
   tabKey: "pricing",
   href: "/dashboard?tab=pricing",
   icon: CreditCard,
-  iconBg: "bg-emerald-100 dark:bg-emerald-900/40",
-  iconColor: "text-brand-primary dark:text-emerald-400",
+  iconBg: "bg-brand-mint dark:bg-brand-primary/35",
+  iconColor: "text-brand-primary dark:text-brand-lime",
 };
 
 // ─── Small icon tile ──────────────────────────────────────────────────────────
@@ -182,8 +182,8 @@ function SidebarContent({
         title={isCollapsed ? (locked ? `${item.name} (upgrade)` : item.name) : undefined}
         className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-150 group ${
           active
-            ? "bg-slate-100 dark:bg-white/[0.06]"
-            : "hover:bg-slate-50 dark:hover:bg-white/[0.03]"
+            ? "bg-brand-mint dark:bg-brand-primary/25 border border-emerald-900/10 dark:border-brand-accent/30"
+            : "hover:bg-brand-mint-soft/70 dark:hover:bg-white/[0.04] border border-transparent"
         } ${isCollapsed ? "justify-center" : ""} ${locked ? "opacity-70" : ""}`}
       >
         <IconTile icon={item.icon} bg={item.iconBg} color={item.iconColor} />
@@ -212,7 +212,7 @@ function SidebarContent({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-[#0d111e] border-r border-slate-200 dark:border-white/[0.06]">
+    <div className="flex flex-col h-full bg-white dark:bg-[#0d111e] border-r border-emerald-900/8 dark:border-white/[0.06]">
       {/* ── Brand header ── */}
       <div
         className={`flex items-center px-4 py-5 ${
@@ -366,7 +366,7 @@ export default function DashboardLayout({
   const sidebarWidth = isCollapsed ? "w-[72px]" : "w-[240px]";
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#070b17] text-slate-800 dark:text-slate-200 flex">
+    <div className="min-h-screen bg-brand-mint dark:bg-[#070b17] text-brand-ink dark:text-slate-200 flex">
 
       {/* ── Desktop sidebar ── */}
       <aside
@@ -424,7 +424,7 @@ export default function DashboardLayout({
       {/* ── Main content ── */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="sticky top-0 z-20 flex items-center justify-between bg-white dark:bg-[#070b17] border-b border-slate-200 dark:border-white/[0.06] px-6 py-3.5">
+        <header className="sticky top-0 z-20 flex items-center justify-between bg-white/95 dark:bg-[#070b17]/95 backdrop-blur border-b border-emerald-900/8 dark:border-white/[0.06] px-6 py-3.5">
           <div className="flex items-center gap-3">
             {/* Mobile menu */}
             <button
@@ -454,8 +454,8 @@ export default function DashboardLayout({
                 !mounted
                   ? "bg-slate-100 border-slate-200"
                   : theme === "dark"
-                  ? "bg-emerald-950/60 border-emerald-500/30"
-                  : "bg-amber-50 border-amber-200"
+                  ? "bg-brand-primary/70 border-brand-accent/40"
+                  : "bg-brand-mint border-emerald-900/15"
               }`}
               title={
                 theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"
@@ -467,14 +467,14 @@ export default function DashboardLayout({
                   !mounted
                     ? "bg-slate-400"
                     : theme === "dark"
-                    ? "translate-x-5 bg-emerald-500"
-                    : "translate-x-0 bg-amber-400"
+                    ? "translate-x-5 bg-brand-lime"
+                    : "translate-x-0 bg-brand-primary"
                 }`}
               >
                 {!mounted ? (
                   <div className="w-3 h-3" />
                 ) : theme === "dark" ? (
-                  <Moon className="h-3 w-3 text-white" />
+                  <Moon className="h-3 w-3 text-brand-ink" />
                 ) : (
                   <Sun className="h-3 w-3 text-white" />
                 )}

@@ -155,7 +155,7 @@ function DashboardContent() {
             <button
               type="button"
               onClick={() => router.push("/dashboard?tab=pricing")}
-              className="px-4 py-2 rounded-xl bg-violet-600 text-white text-xs font-bold"
+              className="px-4 py-2 rounded-xl bg-brand-primary text-white text-xs font-bold"
             >
               Open Pricing
             </button>
@@ -183,7 +183,7 @@ function DashboardContent() {
             <button
               type="button"
               onClick={() => router.push("/dashboard?tab=pricing")}
-              className="px-4 py-2 rounded-xl bg-violet-600 text-white text-xs font-bold"
+              className="px-4 py-2 rounded-xl bg-brand-primary text-white text-xs font-bold"
             >
               Open Pricing
             </button>
@@ -408,7 +408,7 @@ function DashboardOverviewPanel({ user }: { user: any }) {
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="flex items-center justify-center space-x-2 px-5 py-3 bg-brand-primary hover:bg-brand-primary disabled:bg-purple-800/40 text-white text-xs font-bold rounded-2xl transition shadow-lg shadow-purple-950/20 flex-shrink-0"
+            className="flex items-center justify-center space-x-2 px-5 py-3 bg-brand-primary hover:bg-brand-primary disabled:bg-brand-primary/40 text-white text-xs font-bold rounded-2xl transition shadow-lg shadow-brand-primary/20 flex-shrink-0"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
             <span>{refreshing ? "Regenerating..." : "Refresh / Regenerate"}</span>
@@ -711,7 +711,7 @@ function DashboardOverviewPanel({ user }: { user: any }) {
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-black/[0.05] dark:border-white/5 pb-4">
               <div className="flex items-start space-x-2.5">
-                <Send className="w-5 h-5 text-violet-500 dark:text-violet-400 mt-0.5 flex-shrink-0" />
+                <Send className="w-5 h-5 text-brand-primary dark:text-brand-lime mt-0.5 flex-shrink-0" />
                 <div>
                   <h3 className="text-[13px] font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">Confirm Queue</h3>
                   <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 font-medium">
@@ -763,10 +763,10 @@ function DashboardOverviewPanel({ user }: { user: any }) {
                         </div>
                       </div>
                       <div className="flex items-center space-x-2 flex-shrink-0">
-                        <span className="text-[10px] text-violet-500 dark:text-violet-400 font-semibold">
+                        <span className="text-[10px] text-brand-primary dark:text-brand-lime font-semibold">
                           Confirm
                         </span>
-                        <span className="w-2 h-2 rounded-full bg-violet-500 shadow-[0_0_8px_rgba(139,92,246,0.5)] animate-pulse" />
+                        <span className="w-2 h-2 rounded-full bg-brand-primary shadow-[0_0_8px_rgba(139,92,246,0.5)] animate-pulse" />
                       </div>
                     </button>
                   );
@@ -1300,7 +1300,7 @@ function AiAgentPanel({ user }: { user: any }) {
         {/* Panel Header */}
         <div className="px-6 py-4 bg-slate-50/50 dark:bg-white/[0.01] border-b border-black/[0.05] dark:border-white/5 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-xl bg-brand-primary flex items-center justify-center text-white shadow-md shadow-purple-600/25">
+            <div className="w-8 h-8 rounded-xl bg-brand-primary flex items-center justify-center text-white shadow-md shadow-brand-primary/25">
               <Sparkles className="w-4 h-4 text-white fill-white" />
             </div>
             <div>
@@ -1372,7 +1372,7 @@ function AiAgentPanel({ user }: { user: any }) {
             return (
               <div key={idx} className={`flex flex-col ${m.sender === "user" ? "items-end" : "items-start"}`}>
                 <div className={`max-w-[85%] p-4 rounded-3xl shadow-sm text-sm leading-relaxed ${m.sender === "user"
-                  ? "bg-gradient-to-tr from-emerald-600 to-emerald-700 text-white rounded-br-none shadow-md shadow-indigo-950/20"
+                  ? "bg-gradient-to-tr from-emerald-600 to-emerald-700 text-white rounded-br-none shadow-md shadow-brand-primary/20"
                   : "bg-slate-50 dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/5 text-slate-700 dark:text-slate-300 rounded-bl-none"
                   }`}>
                   {m.sender === "user" ? (
@@ -1402,7 +1402,7 @@ function AiAgentPanel({ user }: { user: any }) {
                       <button
                         key={sIdx}
                         onClick={() => handleSuggestionClick(suggestion)}
-                        className="px-3 py-1.5 text-xs font-bold rounded-full border border-emerald-500/20 hover:border-purple-500/50 bg-brand-primary/5 hover:bg-brand-primary/10 text-brand-primary dark:text-brand-accent transition"
+                        className="px-3 py-1.5 text-xs font-bold rounded-full border border-emerald-500/20 hover:border-brand-accent/50 bg-brand-primary/5 hover:bg-brand-primary/10 text-brand-primary dark:text-brand-accent transition"
                       >
                         {suggestion}
                       </button>
@@ -1464,13 +1464,13 @@ function AiAgentPanel({ user }: { user: any }) {
           {/* Thinking / Loading indicator */}
           {loading && (
             <div className="flex items-start gap-3">
-              <div className="w-7 h-7 rounded-xl bg-purple-100 dark:bg-purple-950/40 border border-purple-200/50 dark:border-emerald-500/20 flex items-center justify-center text-brand-primary dark:text-brand-accent shadow-sm flex-shrink-0 animate-pulse">
+              <div className="w-7 h-7 rounded-xl bg-brand-mint dark:bg-brand-primary/30 border border-emerald-900/10 dark:border-emerald-500/20 flex items-center justify-center text-brand-primary dark:text-brand-accent shadow-sm flex-shrink-0 animate-pulse">
                 <Sparkles className="w-3.5 h-3.5 animate-spin" />
               </div>
               <div className="bg-slate-50 dark:bg-white/[0.01] border border-black/[0.04] dark:border-white/5 rounded-3xl rounded-tl-none p-4 max-w-[70%] shadow-sm">
                 <div className="flex items-center space-x-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-brand-primary dark:bg-purple-400 animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 dark:bg-indigo-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <div className="w-2.5 h-2.5 rounded-full bg-brand-primary dark:bg-brand-lime animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <div className="w-2.5 h-2.5 rounded-full bg-brand-primary dark:bg-brand-primary animate-bounce" style={{ animationDelay: "150ms" }} />
                   <div className="w-2.5 h-2.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-bounce" style={{ animationDelay: "300ms" }} />
                 </div>
                 <p className="text-[10px] text-slate-400 mt-2 font-bold tracking-wide uppercase">Connecting platforms sync...</p>
@@ -1490,12 +1490,12 @@ function AiAgentPanel({ user }: { user: any }) {
             onChange={(e) => setInput(e.target.value)}
             disabled={loading}
             placeholder="Ask AI Agent to check alerts, draft emails, or search chat logs..."
-            className="flex-1 bg-white dark:bg-[#030712] border border-black/[0.06] dark:border-white/5 rounded-2xl px-4 py-3 text-xs sm:text-sm text-slate-800 dark:text-white placeholder-slate-450 dark:placeholder-slate-500 focus:outline-none focus:border-purple-500/60 transition shadow-inner"
+            className="flex-1 bg-white dark:bg-[#030712] border border-black/[0.06] dark:border-white/5 rounded-2xl px-4 py-3 text-xs sm:text-sm text-slate-800 dark:text-white placeholder-slate-450 dark:placeholder-slate-500 focus:outline-none focus:border-brand-primary/60 transition shadow-inner"
           />
           <button
             type="submit"
             disabled={!input.trim() || loading}
-            className="px-4 py-3 bg-purple-650 hover:bg-brand-primary disabled:bg-purple-800/20 text-white rounded-2xl flex items-center justify-center transition shadow-md shadow-purple-500/10 cursor-pointer"
+            className="px-4 py-3 bg-brand-primary hover:bg-brand-primary disabled:bg-brand-primary/20 text-white rounded-2xl flex items-center justify-center transition shadow-md shadow-brand-primary/10 cursor-pointer"
           >
             <Send className="w-4 h-4 text-white" />
           </button>
@@ -1594,7 +1594,7 @@ function renderInlineMarkdown(text: string) {
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-brand-primary dark:text-brand-accent font-bold underline inline-flex items-center gap-0.5 hover:text-brand-accent dark:hover:text-purple-300"
+            className="text-brand-primary dark:text-brand-accent font-bold underline inline-flex items-center gap-0.5 hover:text-brand-accent dark:hover:text-brand-lime"
           >
             {linkText}
           </a>
@@ -1850,12 +1850,12 @@ function BriefingPanel() {
     email: Mail, messages: MessageSquare, calendar: Calendar, mentions: AtSign, tasks: CheckCircle, follow_ups: ArrowRight
   };
   const categoryColors: Record<string, string> = {
-    email: "text-blue-400", messages: "text-emerald-400", calendar: "text-sky-400", mentions: "text-violet-400", tasks: "text-amber-400", follow_ups: "text-rose-400"
+    email: "text-blue-400", messages: "text-emerald-400", calendar: "text-sky-400", mentions: "text-brand-accent", tasks: "text-amber-400", follow_ups: "text-rose-400"
   };
   const categoryBg: Record<string, string> = {
     email: "bg-blue-500/10 border-blue-500/20", messages: "bg-emerald-500/10 border-emerald-500/20",
     calendar: "bg-sky-500/10 border-sky-500/20",
-    mentions: "bg-violet-500/10 border-violet-500/20", tasks: "bg-amber-500/10 border-amber-500/20",
+    mentions: "bg-brand-primary/10 border-brand-accent/30", tasks: "bg-amber-500/10 border-amber-500/20",
     follow_ups: "bg-rose-500/10 border-rose-500/20"
   };
 
@@ -2009,7 +2009,7 @@ function BriefingPanel() {
           </button>
           <button
             onClick={openCreateBriefingDialog}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-xs font-semibold shadow-lg shadow-indigo-500/25 hover:opacity-90 transition"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-xs font-semibold shadow-lg shadow-brand-primary/25 hover:opacity-90 transition"
           >
             <Plus className="w-3.5 h-3.5" />
             Custom Briefing
@@ -2051,13 +2051,13 @@ function BriefingPanel() {
                 <div className="bg-white dark:bg-[#0d111e]/40 border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm overflow-hidden flex flex-col">
                   {/* Executive Summary Card Header */}
                   <div
-                    className="relative overflow-hidden border-b border-slate-200 dark:border-white/10 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent dark:from-indigo-900/30 dark:via-purple-900/10 dark:to-transparent p-5 cursor-pointer group transition-all duration-300"
+                    className="relative overflow-hidden border-b border-slate-200 dark:border-white/10 bg-gradient-to-br from-brand-primary/10 via-brand-accent/5 to-transparent dark:from-brand-primary/30 dark:via-brand-accent/10 dark:to-transparent p-5 cursor-pointer group transition-all duration-300"
                     onClick={() => router.push(`/dashboard/briefing/${latestBriefing.id}`)}
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-brand-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     <div className="relative">
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-emerald-500 to-emerald-600 flex items-center justify-center shadow-md shadow-indigo-500/30">
+                        <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-emerald-500 to-emerald-600 flex items-center justify-center shadow-md shadow-brand-primary/30">
                           <Sparkles className="w-3.5 h-3.5 text-white" />
                         </div>
                         <span className="text-[11px] font-bold uppercase tracking-widest text-brand-accent">Today's Briefing</span>
@@ -2139,7 +2139,7 @@ function BriefingPanel() {
                           {allBriefingItems.length > 5 && (
                             <button
                               onClick={() => router.push(`/dashboard/briefing/${latestBriefing.id}`)}
-                              className="w-full text-center pt-3 text-[11px] font-semibold text-brand-accent hover:text-indigo-300 transition"
+                              className="w-full text-center pt-3 text-[11px] font-semibold text-brand-accent hover:text-brand-lime transition"
                             >
                               View all {allBriefingItems.length} items →
                             </button>
@@ -2151,7 +2151,7 @@ function BriefingPanel() {
                 </div>
               ) : (
                 <div className="rounded-2xl border border-dashed border-slate-300 dark:border-white/10 p-10 text-center">
-                  <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-brand-primary/10 border border-brand-accent/30 flex items-center justify-center mx-auto mb-4">
                     <Sparkles className="w-5 h-5 text-brand-accent" />
                   </div>
                   <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">No briefings yet</h3>
@@ -2164,7 +2164,7 @@ function BriefingPanel() {
                     <button
                       onClick={handleRegenerate}
                       disabled={regenerating || !Object.values(connectedApps).some(Boolean)}
-                      className="px-4 py-2 rounded-xl bg-indigo-500 text-white text-xs font-semibold hover:bg-indigo-600 transition disabled:opacity-50"
+                      className="px-4 py-2 rounded-xl bg-brand-primary text-white text-xs font-semibold hover:bg-brand-secondary transition disabled:opacity-50"
                     >
                       {regenerating ? "Generating…" : "Generate Now"}
                     </button>
@@ -2250,7 +2250,7 @@ function BriefingPanel() {
                     <button
                       type="button"
                       onClick={openCreateBriefingDialog}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-brand-accent text-[11px] font-bold hover:bg-indigo-500/20 transition"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-primary/10 border border-brand-accent/30 text-brand-accent text-[11px] font-bold hover:bg-brand-primary/20 transition"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       Create schedule
@@ -2343,7 +2343,7 @@ function BriefingPanel() {
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   placeholder="e.g. Morning Work Digest"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-400 transition"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-brand-primary dark:focus:border-brand-accent transition"
                 />
               </div>
 
@@ -2355,7 +2355,7 @@ function BriefingPanel() {
                   onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                   placeholder="Summarize work emails and messages from the team each morning..."
                   rows={2}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-400 transition resize-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-brand-primary dark:focus:border-brand-accent transition resize-none"
                 />
               </div>
 
@@ -2376,8 +2376,8 @@ function BriefingPanel() {
                         className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold border transition ${!isConnected
                           ? "opacity-40 cursor-not-allowed bg-slate-50 dark:bg-white/[0.03] border-slate-200 dark:border-white/[0.06] text-slate-400"
                           : isSelected
-                            ? "bg-indigo-500 border-indigo-500 text-white"
-                            : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:border-indigo-400"
+                            ? "bg-brand-primary border-brand-primary text-white"
+                            : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:border-brand-accent"
                           }`}
                       >
                         <img src={logo} alt={label} className="w-4 h-4 object-contain flex-shrink-0" />
@@ -2411,7 +2411,7 @@ function BriefingPanel() {
                       key={cat}
                       type="button"
                       onClick={() => setForm(f => ({ ...f, categories: toggleArrayItem(f.categories, cat) }))}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${form.categories.includes(cat) ? "bg-brand-primary border-purple-500 text-white" : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:border-purple-400"}`}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${form.categories.includes(cat) ? "bg-brand-primary border-brand-primary text-white" : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:border-brand-accent"}`}
                     >
                       {categoryLabels[cat]}
                     </button>
@@ -2428,7 +2428,7 @@ function BriefingPanel() {
                     type="time"
                     value={form.scheduledTime}
                     onChange={e => setForm(f => ({ ...f, scheduledTime: e.target.value }))}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-400 transition"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-primary dark:focus:border-brand-accent transition"
                   />
                 </div>
                 <div>
@@ -2437,7 +2437,7 @@ function BriefingPanel() {
                     required
                     value={form.frequency}
                     onChange={e => setForm(f => ({ ...f, frequency: e.target.value }))}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-400 transition"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-primary dark:focus:border-brand-accent transition"
                   >
                     <option value="daily">Daily</option>
                     <option value="weekly">Weekly</option>
@@ -2475,7 +2475,7 @@ function BriefingPanel() {
                 <button
                   type="submit"
                   disabled={creating || !form.name}
-                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-xs font-semibold shadow-lg shadow-indigo-500/25 hover:opacity-90 transition disabled:opacity-50"
+                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-xs font-semibold shadow-lg shadow-brand-primary/25 hover:opacity-90 transition disabled:opacity-50"
                 >
                   {creating ? "Creating…" : "Create Briefing"}
                 </button>
@@ -2530,8 +2530,8 @@ const PLATFORMS: Platform[] = [
     desc: "Post updates to channels, sync workspace history, and notify team members.",
     logo: "/005-slack.png",
     color: "text-brand-accent",
-    bg: "from-purple-500/10 via-transparent to-purple-500/5",
-    borderGlow: "group-hover:border-purple-500/30",
+    bg: "from-brand-primary/10 via-transparent to-brand-primary/5",
+    borderGlow: "group-hover:border-brand-primary/30",
     badgeBg: "bg-brand-primary/10 border-emerald-500/20 text-brand-accent"
   },
   {
@@ -2539,10 +2539,10 @@ const PLATFORMS: Platform[] = [
     name: "Microsoft Teams",
     desc: "Sync chats, draft replies, and send messages across your Teams conversations.",
     logo: "/010-teams.svg",
-    color: "text-indigo-400",
-    bg: "from-indigo-500/10 via-transparent to-indigo-500/5",
-    borderGlow: "group-hover:border-indigo-500/30",
-    badgeBg: "bg-indigo-500/10 border-indigo-500/20 text-indigo-400"
+    color: "text-brand-accent",
+    bg: "from-brand-accent/10 via-transparent to-brand-accent/5",
+    borderGlow: "group-hover:border-brand-accent/30",
+    badgeBg: "bg-brand-primary/10 border-brand-accent/30 text-brand-accent"
   },
   {
     id: "outlook",
@@ -2570,9 +2570,9 @@ const PLATFORMS: Platform[] = [
     desc: "Monitor channel chats, post announcements, and index community servers.",
     logo: "/006-discord.png",
     color: "text-brand-accent",
-    bg: "from-indigo-500/10 via-transparent to-indigo-500/5",
-    borderGlow: "group-hover:border-indigo-500/30",
-    badgeBg: "bg-indigo-500/10 border-indigo-500/20 text-brand-accent"
+    bg: "from-brand-accent/10 via-transparent to-brand-accent/5",
+    borderGlow: "group-hover:border-brand-accent/30",
+    badgeBg: "bg-brand-primary/10 border-brand-accent/30 text-brand-accent"
   },
   {
     id: "linkedin",
@@ -3412,7 +3412,7 @@ function IntegrationsPanel() {
           return (
             <div
               key={platform.id}
-              className={`group glass-premium border border-white/5 light:border-slate-200 hover:border-white/10 hover:shadow-lg hover:shadow-purple-900/5 rounded-3xl p-6 transition-all duration-300 flex flex-col justify-between relative overflow-hidden h-[300px] ${
+              className={`group glass-premium border border-white/5 light:border-slate-200 hover:border-white/10 hover:shadow-lg hover:shadow-brand-primary/5 rounded-3xl p-6 transition-all duration-300 flex flex-col justify-between relative overflow-hidden h-[300px] ${
                 !planAllowed ? "opacity-80" : ""
               }`}
             >
@@ -3470,7 +3470,7 @@ function IntegrationsPanel() {
                   <button
                     onClick={() => handleToggleConnect(platform.id)}
                     disabled={isUpdating}
-                    className="w-full py-2.5 px-4 bg-brand-primary hover:bg-brand-primary disabled:bg-purple-800/40 disabled:text-slate-500 active:bg-purple-700 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-purple-900/20 flex items-center justify-center"
+                    className="w-full py-2.5 px-4 bg-brand-primary hover:bg-brand-primary disabled:bg-brand-primary/40 disabled:text-slate-500 active:bg-brand-secondary text-white rounded-xl text-xs font-bold transition shadow-lg shadow-brand-primary/20 flex items-center justify-center"
                   >
                     {isUpdating ? (
                       <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
@@ -3757,7 +3757,7 @@ function IntegrationsPanel() {
                 {platformTools[activeSettingsPlatform.id]?.map((tool) => (
                   <div
                     key={tool.name}
-                    className="p-4 bg-white/[0.01] light:bg-white border border-white/5 light:border-slate-200 rounded-2xl space-y-2.5 hover:border-emerald-500/20 light:hover:border-purple-500/30 transition shadow-sm"
+                    className="p-4 bg-white/[0.01] light:bg-white border border-white/5 light:border-slate-200 rounded-2xl space-y-2.5 hover:border-emerald-500/20 light:hover:border-brand-primary/30 transition shadow-sm"
                   >
                     <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-1.5">
                       <span className="text-xs font-mono font-bold text-brand-accent light:text-brand-primary">{tool.name}</span>
@@ -3811,7 +3811,7 @@ function IntegrationsPanel() {
               </button>
               <button
                 onClick={handleConnectSimulatedGmail}
-                className="flex-1 py-2.5 bg-brand-primary hover:bg-brand-primary text-white rounded-xl text-xs font-bold transition shadow-lg shadow-purple-900/20"
+                className="flex-1 py-2.5 bg-brand-primary hover:bg-brand-primary text-white rounded-xl text-xs font-bold transition shadow-lg shadow-brand-primary/20"
               >
                 Simulated Connect
               </button>
@@ -4207,7 +4207,7 @@ function AlertsPanel({
     queueFilter === "confirm" ? confirmQueue : alerts;
   const stats = [
     { label: "Active Alerts", value: alerts.filter(a => ["active", "triggered"].includes(a.status)).length, icon: Bell, tone: "text-rose-400 bg-rose-500/10 border-rose-500/20" },
-    { label: "Confirm queue", value: confirmQueue.length, icon: Send, tone: "text-violet-400 bg-violet-500/10 border-violet-500/20" },
+    { label: "Confirm queue", value: confirmQueue.length, icon: Send, tone: "text-brand-accent bg-brand-primary/10 border-brand-accent/30" },
     { label: "High Priority Alerts", value: alerts.filter(a => a.priority === "high").length, icon: Flag, tone: "text-amber-400 bg-amber-500/10 border-amber-500/20" },
     { label: "Resolved Alerts", value: alerts.filter(a => a.status === "resolved").length, icon: CheckCircle, tone: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" },
   ];
@@ -4220,7 +4220,7 @@ function AlertsPanel({
 
   const statusStyle: Record<string, string> = {
     active: "bg-rose-500/10 text-rose-400 border-rose-500/25",
-    triggered: "bg-violet-500/10 text-violet-400 border-violet-500/25",
+    triggered: "bg-brand-primary/10 text-brand-accent border-brand-accent/30",
     resolved: "bg-emerald-500/10 text-emerald-400 border-emerald-500/25",
     snoozed: "bg-slate-500/10 text-slate-400 border-slate-500/25",
   };
@@ -4936,13 +4936,13 @@ function AlertsPanel({
               onClick={() => setQueueFilter("confirm")}
               className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border transition inline-flex items-center gap-1.5 ${
                 queueFilter === "confirm"
-                  ? "border-violet-500 bg-violet-500/15 text-violet-400"
+                  ? "border-brand-primary bg-brand-primary/15 text-brand-accent"
                   : "border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300"
               }`}
             >
               Confirm queue
               {confirmQueue.length > 0 ? (
-                <span className="px-1.5 py-0.5 rounded-md bg-violet-500 text-white text-[10px]">{confirmQueue.length}</span>
+                <span className="px-1.5 py-0.5 rounded-md bg-brand-primary text-white text-[10px]">{confirmQueue.length}</span>
               ) : null}
             </button>
           </div>
@@ -5080,7 +5080,7 @@ function AlertsPanel({
                         {alert.status || "active"}
                       </span>
                       {alert.draft_status === "pending_confirm" ? (
-                        <span className="inline-flex px-2 py-1 rounded-lg border border-violet-500/30 bg-violet-500/10 text-[11px] font-bold text-violet-400">
+                        <span className="inline-flex px-2 py-1 rounded-lg border border-brand-accent/35 bg-brand-primary/10 text-[11px] font-bold text-brand-accent">
                           Draft ready
                         </span>
                       ) : null}
@@ -5095,7 +5095,7 @@ function AlertsPanel({
 
         <div className="bg-white dark:bg-[#0d111e]/50 border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-sm space-y-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-violet-500/10 text-violet-400 border border-violet-500/20 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-brand-primary/10 text-brand-accent border border-brand-accent/30 flex items-center justify-center">
               <Bot className="w-5 h-5" />
             </div>
             <div>
@@ -5141,7 +5141,7 @@ function AlertsPanel({
                   </div>
                   <button
                     onClick={() => applySuggestion(suggestion)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-[11px] font-bold transition"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-primary hover:bg-brand-secondary text-white text-[11px] font-bold transition"
                   >
                     <Wand2 className="w-3.5 h-3.5" />
                     Use
@@ -5281,7 +5281,7 @@ function AlertsPanel({
                 <span className="px-2.5 py-1 rounded-lg border border-blue-500/30 bg-blue-500/10 text-[11px] font-bold text-blue-400 animate-pulse">Converted to Task</span>
               )}
               {selectedAlert.last_action === "follow_up" && (
-                <span className="px-2.5 py-1 rounded-lg border border-violet-500/30 bg-violet-500/10 text-[11px] font-bold text-violet-400 animate-pulse">Converted to Follow-up</span>
+                <span className="px-2.5 py-1 rounded-lg border border-brand-accent/35 bg-brand-primary/10 text-[11px] font-bold text-brand-accent animate-pulse">Converted to Follow-up</span>
               )}
               {selectedAlert.last_action === "send_reply" && (
                 <span className="px-2.5 py-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-[11px] font-bold text-emerald-400">Reply Sent</span>
@@ -5307,7 +5307,7 @@ function AlertsPanel({
                   <button 
                     onClick={handleGenerateSummary} 
                     disabled={summaryLoading}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-violet-600/10 hover:bg-violet-600/20 border border-violet-500/20 text-[10px] font-bold text-violet-500 hover:text-violet-400 disabled:opacity-50 transition"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-brand-primary/10 hover:bg-brand-primary/20 border border-brand-accent/30 text-[10px] font-bold text-brand-primary hover:text-brand-accent disabled:opacity-50 transition"
                   >
                     <Sparkles className="w-3 h-3" />
                     {summaryLoading ? "Summarizing..." : aiSummary ? "Regenerate" : "Generate Summary"}
@@ -5329,14 +5329,14 @@ function AlertsPanel({
                   <button 
                     onClick={handleGenerateNextAction} 
                     disabled={actionLoading}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-violet-600/10 hover:bg-violet-600/20 border border-violet-500/20 text-[10px] font-bold text-violet-500 hover:text-violet-400 disabled:opacity-50 transition"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-brand-primary/10 hover:bg-brand-primary/20 border border-brand-accent/30 text-[10px] font-bold text-brand-primary hover:text-brand-accent disabled:opacity-50 transition"
                   >
                     <Bot className="w-3 h-3" />
                     {actionLoading ? "Thinking..." : aiSuggestedAction ? "Refresh suggestion" : "Suggest Next Action"}
                   </button>
                 </div>
                 {(aiSuggestedAction || selectedAlert.suggested_action) ? (
-                  <div className="bg-violet-500/5 rounded-xl p-3 border border-violet-500/10 text-xs text-violet-600 dark:text-violet-300 font-medium animate-fade-in">
+                  <div className="bg-brand-primary/5 rounded-xl p-3 border border-brand-accent/20 text-xs text-brand-primary dark:text-brand-lime font-medium animate-fade-in">
                     {aiSuggestedAction || selectedAlert.suggested_action}
                   </div>
                 ) : (
@@ -5349,11 +5349,11 @@ function AlertsPanel({
               <button onClick={() => handleAlertAction("resolved")} className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-500 hover:bg-emerald-500/15 transition"><ClipboardCheck className="w-4 h-4" />Resolve</button>
               <button onClick={() => handleAlertAction("snoozed")} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-white/10 px-3 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition"><PauseCircle className="w-4 h-4" />Snooze</button>
               <button onClick={() => handleAlertAction("task")} className="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/10 px-3 py-2 text-xs font-bold text-blue-500 hover:bg-blue-500/15 transition"><CheckCircle className="w-4 h-4" />Task</button>
-              <button onClick={() => handleAlertAction("follow_up")} className="inline-flex items-center justify-center gap-2 rounded-xl border border-violet-500/20 bg-violet-500/10 px-3 py-2 text-xs font-bold text-violet-500 hover:bg-violet-500/15 transition"><ArrowRight className="w-4 h-4" />Follow-up</button>
+              <button onClick={() => handleAlertAction("follow_up")} className="inline-flex items-center justify-center gap-2 rounded-xl border border-brand-accent/30 bg-brand-primary/10 px-3 py-2 text-xs font-bold text-brand-primary hover:bg-brand-secondary/15 transition"><ArrowRight className="w-4 h-4" />Follow-up</button>
             </div>
 
             {(selectedAlert.requires_response || selectedAlert.draft_status === "pending_confirm") && (
-              <div className="rounded-2xl border border-violet-500/20 p-4 space-y-3 bg-violet-500/5">
+              <div className="rounded-2xl border border-brand-accent/30 p-4 space-y-3 bg-brand-primary/5">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <h4 className="text-sm font-black text-slate-900 dark:text-white">
@@ -5365,7 +5365,7 @@ function AlertsPanel({
                         : "Draft, edit, and confirm a reply before it sends."}
                     </p>
                   </div>
-                  <button onClick={handleGenerateDraft} disabled={drafting} className="inline-flex items-center gap-2 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-60 px-3 py-2 text-xs font-bold text-white transition shadow-lg shadow-violet-600/20">
+                  <button onClick={handleGenerateDraft} disabled={drafting} className="inline-flex items-center gap-2 rounded-xl bg-brand-primary hover:bg-brand-secondary disabled:opacity-60 px-3 py-2 text-xs font-bold text-white transition shadow-lg shadow-brand-primary/20">
                     <Sparkles className="w-4 h-4" />
                     {drafting ? "Drafting..." : selectedAlert.draft_reply ? "Regenerate" : "Generate draft"}
                   </button>
@@ -5378,20 +5378,20 @@ function AlertsPanel({
                     placeholder="e.g., 'Politely decline and suggest next week', 'Acknowledge receipt'" 
                     value={replyGuidance} 
                     onChange={e => setReplyGuidance(e.target.value)} 
-                    className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-violet-500 placeholder-slate-500" 
+                    className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-brand-primary placeholder-slate-500" 
                   />
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Message Draft</label>
-                  <textarea value={draftReply} onChange={e => setDraftReply(e.target.value)} rows={5} placeholder="AI generated draft will appear here..." className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-violet-500 resize-none" />
+                  <textarea value={draftReply} onChange={e => setDraftReply(e.target.value)} rows={5} placeholder="AI generated draft will appear here..." className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-brand-primary resize-none" />
                 </div>
 
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => void handleConfirmSend()}
                     disabled={!draftReply.trim() || confirming}
-                    className="inline-flex items-center gap-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white disabled:opacity-50 px-4 py-2.5 text-xs font-bold transition shadow-md"
+                    className="inline-flex items-center gap-2 rounded-xl bg-brand-primary hover:bg-brand-secondary text-white disabled:opacity-50 px-4 py-2.5 text-xs font-bold transition shadow-md"
                   >
                     <Send className="w-4 h-4" />
                     {confirming ? "Sending…" : "Confirm & send"}
@@ -5721,7 +5721,7 @@ function SettingsPanel() {
           <button
             type="button"
             onClick={handleSave}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold shadow-lg shadow-violet-600/20 transition"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-primary hover:bg-brand-secondary text-white text-xs font-bold shadow-lg shadow-brand-primary/20 transition"
           >
             <Save className="w-4 h-4" />
             {saveState === "saved" ? "Saved" : saveState === "saving" ? "Saving…" : saveState === "error" ? "Retry save" : "Save Settings"}
@@ -5752,7 +5752,7 @@ function SettingsPanel() {
                     </div>
                     <div className="h-2 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-violet-500 transition-all"
+                        className="h-full rounded-full bg-brand-primary transition-all"
                         style={{ width: `${barPct(row.used, row.limit)}%` }}
                       />
                     </div>
@@ -5795,7 +5795,7 @@ function SettingsPanel() {
                   value={settings.displayName}
                   onChange={event => updateSetting("displayName", event.target.value)}
                   placeholder="Your name"
-                  className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-violet-500"
+                  className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-brand-primary"
                 />
               </label>
               <label className="space-y-2">
@@ -5803,7 +5803,7 @@ function SettingsPanel() {
                 <input
                   value={settings.timezone}
                   onChange={event => updateSetting("timezone", event.target.value)}
-                  className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-violet-500"
+                  className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-brand-primary"
                 />
               </label>
             </div>
@@ -5813,7 +5813,7 @@ function SettingsPanel() {
                 value={settings.roleContext}
                 onChange={event => updateSetting("roleContext", event.target.value)}
                 rows={3}
-                className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-violet-500 resize-none"
+                className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-brand-primary resize-none"
               />
             </label>
           </SettingsSection>
@@ -5829,7 +5829,7 @@ function SettingsPanel() {
                 <select
                   value={settings.detailLevel}
                   onChange={event => updateSetting("detailLevel", event.target.value as AssistantSettings["detailLevel"])}
-                  className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-violet-500"
+                  className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-brand-primary"
                 >
                   <option value="minimal">Minimal action items</option>
                   <option value="standard">Standard executive summary</option>
@@ -5841,7 +5841,7 @@ function SettingsPanel() {
                 <select
                   value={settings.responseTone}
                   onChange={event => updateSetting("responseTone", event.target.value as AssistantSettings["responseTone"])}
-                  className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-violet-500"
+                  className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-brand-primary"
                 >
                   <option value="direct">Direct and concise</option>
                   <option value="friendly">Friendly and polished</option>
@@ -5865,7 +5865,7 @@ function SettingsPanel() {
                 }
               />
               {!canAutoDraftGmail && (
-                <p className="text-[11px] font-bold text-violet-500">
+                <p className="text-[11px] font-bold text-brand-primary">
                   Upgrade to Pro to unlock native email draft replies.
                 </p>
               )}
@@ -5904,7 +5904,7 @@ function SettingsPanel() {
               <select
                 value={settings.briefingCadence}
                 onChange={event => updateSetting("briefingCadence", event.target.value as AssistantSettings["briefingCadence"])}
-                className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-violet-500"
+                className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-brand-primary"
               >
                 <option value="morning">Morning digest</option>
                 <option value="twice_daily">Morning and evening</option>
@@ -5940,7 +5940,7 @@ function SettingsPanel() {
                 <select
                   value={settings.syncFrequency}
                   onChange={event => updateSetting("syncFrequency", event.target.value as AssistantSettings["syncFrequency"])}
-                  className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-violet-500"
+                  className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-brand-primary"
                 >
                   <option value="real_time">Realtime where available</option>
                   <option value="15_minutes">Every 15 minutes</option>
@@ -5952,7 +5952,7 @@ function SettingsPanel() {
                 <select
                   value={settings.alertPriority}
                   onChange={event => updateSetting("alertPriority", event.target.value as AssistantSettings["alertPriority"])}
-                  className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-violet-500"
+                  className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-brand-primary"
                 >
                   <option value="all">All priorities</option>
                   <option value="medium_high">Medium and high only</option>
@@ -6094,7 +6094,7 @@ function SettingsPanel() {
                     setEmailTestLoading(false);
                   }
                 }}
-                className="px-3 py-2 rounded-xl border border-violet-500/30 text-xs font-bold text-violet-400 hover:bg-violet-500/10 disabled:opacity-50 transition"
+                className="px-3 py-2 rounded-xl border border-brand-accent/35 text-xs font-bold text-brand-accent hover:bg-brand-secondary/10 disabled:opacity-50 transition"
               >
                 {emailTestLoading ? "Sending…" : "Send test email"}
               </button>
@@ -6118,7 +6118,7 @@ function SettingsPanel() {
                 onClick={toggleTheme}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 focus:outline-none cursor-pointer p-0.5 border ${
                   theme === "dark"
-                      ? "bg-indigo-950/60 border-indigo-500/30"
+                      ? "bg-brand-primary/60 border-brand-accent/30"
                       : "bg-amber-50 border-amber-200"
                 }`}
                 title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
@@ -6127,7 +6127,7 @@ function SettingsPanel() {
                 <span
                   className={`flex h-5 w-5 items-center justify-center rounded-full transition-all duration-300 shadow ${
                     theme === "dark"
-                        ? "translate-x-5 bg-indigo-500"
+                        ? "translate-x-5 bg-brand-primary"
                         : "translate-x-0 bg-amber-400"
                   }`}
                 >
@@ -6176,7 +6176,7 @@ function SettingsPanel() {
           >
             <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.03] px-3 py-3 space-y-1">
               <div className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-white">
-                <Smartphone className="w-4 h-4 text-violet-500" />
+                <Smartphone className="w-4 h-4 text-brand-primary" />
                 {user?.isPhoneAuth ? "Phone authentication" : "InsForge authentication"}
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{user?.email || user?.phone || "No active account details"}</p>
@@ -6200,7 +6200,7 @@ function SettingsPanel() {
             {isAdminEmail(user?.email) ? (
               <Link
                 href="/admin"
-                className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 text-xs font-bold text-indigo-600 dark:text-indigo-300 hover:bg-indigo-500/15 transition"
+                className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-brand-accent/30 bg-brand-primary/10 text-xs font-bold text-brand-primary dark:text-brand-lime hover:bg-brand-primary/15 transition"
               >
                 <Shield className="w-4 h-4" />
                 Admin Console
@@ -6253,14 +6253,14 @@ function PricingPanel() {
       <div>
         <h2 className="text-xl font-bold text-white light:text-slate-900 tracking-wide">Pricing & Plans</h2>
         <p className="text-xs text-slate-400">
-          Current plan: <span className="text-violet-400 font-bold">{getPlan(currentPlanId).name}</span>
+          Current plan: <span className="text-brand-accent font-bold">{getPlan(currentPlanId).name}</span>
           {" · "}Redeem a code to upgrade. Confirm-before-send is always on.
         </p>
       </div>
 
       <div
         id="redeem"
-        className="rounded-2xl border border-violet-500/20 bg-violet-500/5 p-5 max-w-2xl"
+        className="rounded-2xl border border-brand-accent/30 bg-brand-primary/5 p-5 max-w-2xl"
       >
         <RedeemCodeForm onRedeemed={() => setUsageRefresh((n) => n + 1)} />
       </div>
@@ -6274,7 +6274,7 @@ function PricingPanel() {
               key={id}
               className={`p-5 rounded-3xl border flex flex-col justify-between relative overflow-hidden transition ${
                 active
-                  ? "bg-gradient-to-tr from-purple-900/30 via-[#090d1a] to-blue-900/10 light:from-purple-500/10 light:via-white light:to-blue-500/10 border-purple-500/30"
+                  ? "bg-gradient-to-tr from-brand-primary/30 via-[#0F1C17] to-brand-accent/10 light:from-brand-primary/10 light:via-white light:to-brand-mint border-brand-primary/30"
                   : "bg-white/[0.01] light:bg-white border-white/5 light:border-slate-200"
               }`}
             >
@@ -6308,7 +6308,7 @@ function PricingPanel() {
                 className={`w-full mt-5 py-2.5 rounded-xl text-xs font-bold transition text-center block ${
                   active
                     ? "bg-white/5 light:bg-slate-50 border border-white/10 light:border-slate-200 text-slate-400"
-                    : "bg-brand-primary hover:bg-brand-primary text-white shadow-lg shadow-purple-600/20"
+                    : "bg-brand-primary hover:bg-brand-primary text-white shadow-lg shadow-brand-primary/20"
                 }`}
               >
                 {active ? "Current plan" : "Redeem code to upgrade"}

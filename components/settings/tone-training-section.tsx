@@ -297,7 +297,7 @@ export function ToneTrainingSection({ userId, planId }: { userId?: string | null
         <>
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/20 bg-violet-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-violet-500">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-accent/20 bg-brand-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-brand-primary">
                 Normal · every plan
               </span>
               <button
@@ -323,7 +323,7 @@ export function ToneTrainingSection({ userId, planId }: { userId?: string | null
                 onChange={(e) => setInstructions(e.target.value.slice(0, INSTRUCTIONS_MAX_CHARS))}
                 rows={3}
                 placeholder="e.g. Short sentences, casual, I skip greetings and get straight to the point."
-                className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-violet-500 resize-none"
+                className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-brand-primary resize-none"
               />
             </label>
 
@@ -333,7 +333,7 @@ export function ToneTrainingSection({ userId, planId }: { userId?: string | null
                 value={signOff}
                 onChange={(e) => setSignOff(e.target.value.slice(0, SIGNOFF_MAX_CHARS))}
                 placeholder="e.g. Best, Alex"
-                className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-violet-500"
+                className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-brand-primary"
               />
             </label>
 
@@ -344,7 +344,7 @@ export function ToneTrainingSection({ userId, planId }: { userId?: string | null
                   <button
                     type="button"
                     onClick={addSample}
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-violet-500 hover:text-violet-400 transition"
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-brand-primary hover:text-brand-primary transition"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Add sample
@@ -364,7 +364,7 @@ export function ToneTrainingSection({ userId, planId }: { userId?: string | null
                         onChange={(e) => updateSample(index, e.target.value)}
                         rows={2}
                         placeholder={`Sample reply ${index + 1}`}
-                        className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-violet-500 resize-none"
+                        className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-brand-primary resize-none"
                       />
                       <button
                         type="button"
@@ -385,7 +385,7 @@ export function ToneTrainingSection({ userId, planId }: { userId?: string | null
                 type="button"
                 onClick={saveVoice}
                 disabled={saveState === "saving" || !userId}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-xs font-bold transition"
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-brand-primary hover:bg-brand-primary disabled:opacity-50 text-white text-xs font-bold transition"
               >
                 {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved" : "Save voice settings"}
               </button>
@@ -417,7 +417,7 @@ export function ToneTrainingSection({ userId, planId }: { userId?: string | null
               <span
                 className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
                   isAdvanced
-                    ? "border-violet-500/20 bg-violet-500/10 text-violet-500"
+                    ? "border-brand-accent/20 bg-brand-primary/10 text-brand-primary"
                     : "border-slate-200 dark:border-white/10 text-slate-500"
                 }`}
               >
@@ -428,7 +428,7 @@ export function ToneTrainingSection({ userId, planId }: { userId?: string | null
                   type="button"
                   onClick={regenerateSummary}
                   disabled={regenerating}
-                  className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-500 hover:text-violet-500 disabled:opacity-50 transition"
+                  className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-500 hover:text-brand-primary disabled:opacity-50 transition"
                 >
                   {regenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                   Refresh summary
@@ -448,7 +448,7 @@ export function ToneTrainingSection({ userId, planId }: { userId?: string | null
                   </p>
                   <Link
                     href="/dashboard?tab=pricing"
-                    className="inline-flex items-center gap-1 mt-2 text-[11px] font-bold text-violet-500 hover:text-violet-400 transition"
+                    className="inline-flex items-center gap-1 mt-2 text-[11px] font-bold text-brand-primary hover:text-brand-primary transition"
                   >
                     Upgrade to Business <ArrowRight className="w-3 h-3" />
                   </Link>
@@ -470,11 +470,11 @@ export function ToneTrainingSection({ userId, planId }: { userId?: string | null
                       >
                         <div className="flex items-start gap-2 min-w-0">
                           {source.type === "url" ? (
-                            <LinkIcon className="w-4 h-4 text-violet-500 flex-shrink-0 mt-0.5" />
+                            <LinkIcon className="w-4 h-4 text-brand-primary flex-shrink-0 mt-0.5" />
                           ) : source.type === "document" ? (
-                            <FileText className="w-4 h-4 text-violet-500 flex-shrink-0 mt-0.5" />
+                            <FileText className="w-4 h-4 text-brand-primary flex-shrink-0 mt-0.5" />
                           ) : (
-                            <Type className="w-4 h-4 text-violet-500 flex-shrink-0 mt-0.5" />
+                            <Type className="w-4 h-4 text-brand-primary flex-shrink-0 mt-0.5" />
                           )}
                           <div className="min-w-0">
                             <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">
@@ -528,7 +528,7 @@ export function ToneTrainingSection({ userId, planId }: { userId?: string | null
                         }}
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-bold transition ${
                           sourceType === opt.value
-                            ? "border-violet-500 bg-violet-500/10 text-violet-500"
+                            ? "border-brand-primary bg-brand-primary/10 text-brand-primary"
                             : "border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5"
                         }`}
                       >
@@ -542,7 +542,7 @@ export function ToneTrainingSection({ userId, planId }: { userId?: string | null
                     value={sourceTitle}
                     onChange={(e) => setSourceTitle(e.target.value)}
                     placeholder="Title (optional)"
-                    className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-violet-500"
+                    className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-brand-primary"
                   />
 
                   {sourceType === "url" ? (
@@ -550,7 +550,7 @@ export function ToneTrainingSection({ userId, planId }: { userId?: string | null
                       value={sourceUrl}
                       onChange={(e) => setSourceUrl(e.target.value)}
                       placeholder="https://example.com/style-guide"
-                      className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-violet-500"
+                      className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-brand-primary"
                     />
                   ) : (
                     <>
@@ -574,7 +574,7 @@ export function ToneTrainingSection({ userId, planId }: { userId?: string | null
                             ? "Text from your .txt/.md file appears here — for PDF/DOCX, paste the text directly."
                             : "Paste a style guide, FAQ, or past replies…"
                         }
-                        className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-violet-500 resize-none"
+                        className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#030712] px-3 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-brand-primary resize-none"
                       />
                     </>
                   )}
@@ -583,7 +583,7 @@ export function ToneTrainingSection({ userId, planId }: { userId?: string | null
                     type="button"
                     onClick={addSource}
                     disabled={addingSource || sources.length >= SOURCE_MAX_COUNT}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-xs font-bold transition"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-brand-primary hover:bg-brand-primary disabled:opacity-50 text-white text-xs font-bold transition"
                   >
                     {addingSource ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
                     Add source

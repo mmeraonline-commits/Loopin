@@ -48,7 +48,7 @@ export function RedeemCodeForm({
   return (
     <form onSubmit={submit} className={`space-y-3 ${className}`}>
       <div className="flex items-center gap-2 text-sm font-bold text-slate-800 dark:text-slate-100">
-        <Ticket className="w-4 h-4 text-violet-500" />
+        <Ticket className="w-4 h-4 text-brand-primary" />
         Redeem upgrade code
       </div>
       <div className="flex flex-col sm:flex-row gap-2">
@@ -56,12 +56,12 @@ export function RedeemCodeForm({
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
           placeholder="PRO-XXXX-XXXX"
-          className="flex-1 rounded-xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/[0.04] px-3 py-2.5 text-sm font-mono tracking-wide text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-violet-500/40"
+          className="flex-1 rounded-xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/[0.04] px-3 py-2.5 text-sm font-mono tracking-wide text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-primary/40"
         />
         <button
           type="submit"
           disabled={loading || !code.trim()}
-          className="px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-xs font-bold transition"
+          className="px-4 py-2.5 rounded-xl bg-brand-primary hover:bg-brand-primary disabled:opacity-50 text-white text-xs font-bold transition"
         >
           {loading ? "Redeeming…" : "Redeem"}
         </button>

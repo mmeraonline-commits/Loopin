@@ -1,10 +1,17 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { CalendarPlus, CheckCircle2, Loader2, Sparkles, Zap } from "lucide-react";
 import { SectionHeading } from "./section-heading";
 import { Reveal } from "./reveal";
-import { GmailIcon, SlackIcon, WhatsAppIcon } from "./channel-icons";
+import {
+  GmailIcon,
+  NotionIcon,
+  SlackIcon,
+  TeamsIcon,
+  TelegramIcon,
+  WhatsAppIcon,
+} from "./channel-icons";
 
 type DemoChannel = {
   id: string;
@@ -115,6 +122,96 @@ const CHANNELS: DemoChannel[] = [
       </div>
     ),
   },
+  {
+    id: "teams",
+    name: "Teams",
+    icon: TeamsIcon,
+    accent: "text-indigo-500",
+    sender: "Priya (Design)",
+    time: "11:20 AM",
+    message: "The new onboarding mocks are ready. Can you leave feedback in the doc before our 2:00 sync?",
+    actionLabel: "Summarizing & scheduling prep",
+    outputTitle: "Teams · Summary & prep",
+    output: (
+      <div className="space-y-3">
+        <div className="rounded-lg border border-emerald-900/10 bg-brand-mint/60 p-3">
+          <span className="mb-1 block text-[10px] font-bold tracking-wider text-brand-primary uppercase">Summary</span>
+          <p className="text-xs leading-relaxed text-slate-700">
+            Priya needs feedback on onboarding mocks ahead of your 2:00 PM sync.
+          </p>
+        </div>
+        <div className="rounded-lg border border-emerald-900/15 bg-white p-3">
+          <span className="mb-1 flex items-center justify-between text-[10px] font-bold tracking-wider text-brand-accent uppercase">
+            Suggested reply
+            <span className="text-[9px] font-medium text-slate-400">awaiting your approval</span>
+          </span>
+          <p className="text-xs leading-relaxed text-slate-700 italic">
+            &quot;Got it — I&apos;ll review the mocks at 1:30 and come with notes. Thanks for the heads up.&quot;
+          </p>
+          <button className="mt-2.5 rounded-lg bg-brand-primary px-3 py-1.5 text-[10px] font-semibold text-white transition hover:bg-brand-secondary">
+            Review &amp; send
+          </button>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: "telegram",
+    name: "Telegram",
+    icon: TelegramIcon,
+    accent: "text-sky-500",
+    sender: "Sam (Advisor)",
+    time: "8:05 PM",
+    message: "Free tomorrow 9–11 to walk through the investor deck? I'll send the latest version now.",
+    actionLabel: "Extracting meeting request",
+    outputTitle: "Telegram · Meeting & brief",
+    output: (
+      <div className="space-y-3">
+        <div className="rounded-xl border border-emerald-900/15 bg-brand-mint/60 p-3.5">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-[10px] font-bold tracking-wider text-brand-primary uppercase">Meeting request</span>
+            <span className="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[9px] font-medium text-amber-700">
+              Action needed
+            </span>
+          </div>
+          <h5 className="text-xs font-semibold text-brand-ink">Investor deck walkthrough with Sam</h5>
+          <p className="mt-1 text-[11px] text-slate-500">Tomorrow · 9:00–11:00 AM</p>
+        </div>
+        <button className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-primary py-2 text-[11px] font-semibold text-white transition hover:bg-brand-secondary">
+          <CalendarPlus className="h-3.5 w-3.5" /> Add to calendar
+        </button>
+      </div>
+    ),
+  },
+  {
+    id: "notion",
+    name: "Notion",
+    icon: NotionIcon,
+    accent: "text-slate-800",
+    sender: "Product spec",
+    time: "Today",
+    message: "Summarize this roadmap page and turn the open questions into next steps I can review.",
+    actionLabel: "Reading & summarizing page",
+    outputTitle: "Notion · Summary & next steps",
+    output: (
+      <div className="space-y-3">
+        <div className="rounded-lg border border-emerald-900/10 bg-brand-mint/60 p-3">
+          <span className="mb-1 block text-[10px] font-bold tracking-wider text-brand-primary uppercase">Summary</span>
+          <p className="text-xs leading-relaxed text-slate-700">
+            Q3 roadmap covers 3 launches and 2 open questions on pricing and ownership.
+          </p>
+        </div>
+        <div className="rounded-lg border border-emerald-900/15 bg-white p-3">
+          <span className="mb-1 block text-[10px] font-bold tracking-wider text-brand-accent uppercase">Next steps drafted</span>
+          <ul className="list-inside list-disc space-y-1 text-xs leading-relaxed text-slate-700">
+            <li>Confirm pricing tier with Finance by Friday</li>
+            <li>Assign owner for the Teams launch</li>
+            <li>Update the Notion page after review</li>
+          </ul>
+        </div>
+      </div>
+    ),
+  },
 ];
 
 export function ChannelDemo() {
@@ -122,8 +219,11 @@ export function ChannelDemo() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [showResult, setShowResult] = useState(false);
+  const autoRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const interactRef = useRef(false);
 
   const active = CHANNELS.find((c) => c.id === activeId) ?? CHANNELS[0];
+  const activeIndex = CHANNELS.findIndex((c) => c.id === active.id);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -143,7 +243,23 @@ export function ChannelDemo() {
     return () => clearInterval(interval);
   }, [isPlaying]);
 
+  // Auto-rotate channels until the user interacts.
+  useEffect(() => {
+    if (interactRef.current) return;
+    autoRef.current = setInterval(() => {
+      const next = CHANNELS[(activeIndex + 1) % CHANNELS.length];
+      setActiveId(next.id);
+      setShowResult(false);
+      setIsPlaying(true);
+    }, 4200);
+    return () => {
+      if (autoRef.current) clearInterval(autoRef.current);
+    };
+  }, [activeIndex]);
+
   const selectChannel = (id: string) => {
+    interactRef.current = true;
+    if (autoRef.current) clearInterval(autoRef.current);
     setActiveId(id);
     setIsPlaying(false);
     setProgress(0);

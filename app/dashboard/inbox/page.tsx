@@ -349,7 +349,7 @@ export default function InboxPage() {
         <button
           type="button"
           onClick={() => router.push("/dashboard?tab=pricing")}
-          className="px-4 py-2 rounded-xl bg-violet-600 text-white text-xs font-bold"
+          className="px-4 py-2 rounded-xl bg-brand-primary text-white text-xs font-bold"
         >
           Open Pricing
         </button>
@@ -391,7 +391,7 @@ export default function InboxPage() {
               {counts.needsReply > 0 && (
                 <>
                   {" · "}
-                  <span className="font-semibold text-violet-600 dark:text-violet-400">{counts.needsReply}</span> need reply
+                  <span className="font-semibold text-brand-primary dark:text-brand-lime">{counts.needsReply}</span> need reply
                 </>
               )}
               {counts.draftReady > 0 && (
@@ -406,7 +406,7 @@ export default function InboxPage() {
                 type="button"
                 onClick={() => void prepareNeedsReplyDrafts()}
                 disabled={preparingDrafts || loading || counts.needsReply === 0}
-                className="inline-flex items-center gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 px-3.5 py-2 text-xs font-semibold text-violet-600 dark:text-violet-300 transition hover:bg-violet-500/15 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl border border-brand-accent/35 bg-brand-primary/10 px-3.5 py-2 text-xs font-semibold text-brand-primary dark:text-brand-lime transition hover:bg-brand-secondary/15 disabled:opacity-50"
               >
                 {preparingDrafts ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
                 Prepare drafts
@@ -442,7 +442,7 @@ export default function InboxPage() {
                   active
                     ? view.key === "all"
                       ? "border-slate-900 dark:border-white bg-slate-900 dark:bg-white text-white dark:text-slate-900"
-                      : "border-violet-500 bg-violet-500/15 text-violet-600 dark:text-violet-300"
+                      : "border-brand-primary bg-brand-primary/15 text-brand-primary dark:text-brand-lime"
                     : "border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04]"
                 }`}
               >
@@ -451,7 +451,7 @@ export default function InboxPage() {
                   <span
                     className={`px-1.5 py-0.5 rounded-md text-[10px] ${
                       active && view.key !== "all"
-                        ? "bg-violet-500 text-white"
+                        ? "bg-brand-primary text-white"
                         : "bg-slate-200/80 dark:bg-white/10 text-slate-600 dark:text-slate-300"
                     }`}
                   >
@@ -592,7 +592,7 @@ export default function InboxPage() {
                                 )}
                                 <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                                   {item.needsReply && (
-                                    <span className="rounded-md border border-violet-500/25 bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-violet-600 dark:text-violet-300">
+                                    <span className="rounded-md border border-brand-accent/30 bg-brand-primary/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-brand-primary dark:text-brand-lime">
                                       {item.category === "urgent" ? "Urgent" : "Needs reply"}
                                     </span>
                                   )}
@@ -760,7 +760,7 @@ export default function InboxPage() {
                             {selected.needsReply ? "Confirm reply" : "Reply"}
                           </h4>
                           {selected.needsReply && selected.classifyReason && (
-                            <p className="mt-0.5 text-[11px] text-violet-600 dark:text-violet-300">
+                            <p className="mt-0.5 text-[11px] text-brand-primary dark:text-brand-lime">
                               {selected.classifyReason}
                               {preparingDrafts && !draft ? " · Preparing draft…" : ""}
                             </p>
@@ -857,7 +857,7 @@ export default function InboxPage() {
                                 )
                               );
                             }}
-                            className="inline-flex items-center gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 px-3.5 py-2.5 text-xs font-bold text-violet-600 dark:text-violet-300"
+                            className="inline-flex items-center gap-2 rounded-xl border border-brand-accent/35 bg-brand-primary/10 px-3.5 py-2.5 text-xs font-bold text-brand-primary dark:text-brand-lime"
                           >
                             Save draft
                           </button>
@@ -865,7 +865,7 @@ export default function InboxPage() {
                         <button
                           onClick={sendReply}
                           disabled={!selected.canReply || sending || !draft.trim()}
-                          className="inline-flex items-center gap-2 rounded-xl bg-violet-600 hover:bg-violet-500 px-4 py-2.5 text-xs font-bold text-white transition disabled:opacity-40 ml-auto"
+                          className="inline-flex items-center gap-2 rounded-xl bg-brand-primary hover:bg-brand-secondary px-4 py-2.5 text-xs font-bold text-white transition disabled:opacity-40 ml-auto"
                         >
                           {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
                           {selected.needsReply ? "Confirm & send" : "Send reply"}

@@ -27,7 +27,7 @@ import {
 const CATEGORIES = [
   { key: "email", label: "Email", icon: Mail, color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20", activeColor: "bg-blue-500 text-white border-blue-500" },
   { key: "messages", label: "Messages", icon: MessageSquare, color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20", activeColor: "bg-emerald-500 text-white border-emerald-500" },
-  { key: "mentions", label: "Mentions", icon: AtSign, color: "text-violet-400", bg: "bg-violet-500/10 border-violet-500/20", activeColor: "bg-violet-500 text-white border-violet-500" },
+  { key: "mentions", label: "Mentions", icon: AtSign, color: "text-brand-accent", bg: "bg-brand-primary/10 border-brand-accent/30", activeColor: "bg-brand-primary text-white border-brand-primary" },
   { key: "tasks", label: "Tasks", icon: CheckCircle, color: "text-amber-400", bg: "bg-amber-500/10 border-amber-500/20", activeColor: "bg-amber-500 text-white border-amber-500" },
   { key: "follow_ups", label: "Follow-Ups", icon: ArrowRight, color: "text-rose-400", bg: "bg-rose-500/10 border-rose-500/20", activeColor: "bg-rose-500 text-white border-rose-500" },
 ];
@@ -162,7 +162,7 @@ function ComposePanel({ item, type, userId, onClose }: ComposePanelProps) {
           type="text"
           value={to}
           onChange={e => setTo(e.target.value)}
-          className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-400 transition"
+          className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-brand-primary dark:focus:border-brand-accent transition"
         />
       </div>
 
@@ -174,7 +174,7 @@ function ComposePanel({ item, type, userId, onClose }: ComposePanelProps) {
             type="text"
             value={subject}
             onChange={e => setSubject(e.target.value)}
-            className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-400 transition"
+            className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-brand-primary dark:focus:border-brand-accent transition"
           />
         </div>
       )}
@@ -186,7 +186,7 @@ function ComposePanel({ item, type, userId, onClose }: ComposePanelProps) {
           <button
             onClick={handleDraftWithAI}
             disabled={drafting}
-            className="flex items-center gap-1.5 text-[11px] font-semibold text-indigo-400 hover:text-indigo-300 transition disabled:opacity-50"
+            className="flex items-center gap-1.5 text-[11px] font-semibold text-brand-accent hover:text-brand-lime transition disabled:opacity-50"
           >
             {drafting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
             {drafting ? "Drafting…" : "Draft with AI"}
@@ -197,7 +197,7 @@ function ComposePanel({ item, type, userId, onClose }: ComposePanelProps) {
           onChange={e => setDraft(e.target.value)}
           placeholder="Write your reply, or click 'Draft with AI' to get a suggestion…"
           rows={6}
-          className="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-400 transition resize-none"
+          className="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-brand-primary dark:focus:border-brand-accent transition resize-none"
         />
       </div>
 
@@ -210,7 +210,7 @@ function ComposePanel({ item, type, userId, onClose }: ComposePanelProps) {
       <button
         onClick={handleSend}
         disabled={sending || !draft.trim() || !to.trim()}
-        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-semibold shadow-lg shadow-indigo-500/20 hover:opacity-90 transition disabled:opacity-50"
+        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-brand-primary to-brand-secondary text-white text-xs font-semibold shadow-lg shadow-brand-primary/20 hover:opacity-90 transition disabled:opacity-50"
       >
         {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
         {sending ? "Sending…" : `Send ${type === "email" ? "Email" : "Message"}`}
@@ -350,7 +350,7 @@ function MentionItem({ item, onReply }: { item: any; onReply: () => void }) {
   return (
     <div className="p-4 rounded-2xl bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.06] hover:border-slate-300 dark:hover:border-white/10 transition space-y-3">
       <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center flex-shrink-0">
+        <div className="w-9 h-9 rounded-xl bg-brand-primary/10 border border-brand-accent/30 flex items-center justify-center flex-shrink-0">
           <AppLogo app={item.app} />
         </div>
         <div className="flex-1 min-w-0">
@@ -362,7 +362,7 @@ function MentionItem({ item, onReply }: { item: any; onReply: () => void }) {
         </div>
       </div>
       <div className="flex justify-end">
-        <button onClick={onReply} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-400 text-[11px] font-semibold hover:bg-violet-500/20 transition">
+        <button onClick={onReply} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-primary/10 border border-brand-accent/30 text-brand-accent text-[11px] font-semibold hover:bg-brand-primary/20 transition">
           <Send className="w-3 h-3" /> Reply
         </button>
       </div>
@@ -400,7 +400,7 @@ function BriefingDetailContent({ id }: { id: string }) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-[#070b17] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
+          <Loader2 className="w-8 h-8 text-brand-accent animate-spin" />
           <p className="text-sm text-slate-400">Loading briefing…</p>
         </div>
       </div>
@@ -412,7 +412,7 @@ function BriefingDetailContent({ id }: { id: string }) {
       <div className="min-h-screen bg-slate-50 dark:bg-[#070b17] flex items-center justify-center">
         <div className="text-center">
           <p className="text-slate-400 mb-4">Briefing not found.</p>
-          <button onClick={() => router.back()} className="text-indigo-400 text-sm hover:underline">← Go Back</button>
+          <button onClick={() => router.back()} className="text-brand-accent text-sm hover:underline">← Go Back</button>
         </div>
       </div>
     );
@@ -439,9 +439,9 @@ function BriefingDetailContent({ id }: { id: string }) {
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         {/* ── Hero Card ── */}
-        <div className="relative overflow-hidden rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent dark:from-indigo-900/30 dark:via-purple-900/10 dark:to-transparent p-6 mb-8">
+        <div className="relative overflow-hidden rounded-2xl border border-brand-accent/30 bg-gradient-to-br from-brand-primary/10 via-brand-accent/5 to-transparent dark:from-brand-primary/30 dark:via-brand-accent/10 dark:to-transparent p-6 mb-8">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 flex-shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-primary to-brand-secondary flex items-center justify-center shadow-lg shadow-brand-primary/30 flex-shrink-0">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1 min-w-0">
@@ -508,7 +508,7 @@ function BriefingDetailContent({ id }: { id: string }) {
 
             {/* Compose Panel */}
             {composeItem && user && (
-              <div className="p-5 rounded-2xl bg-white dark:bg-[#0d111e] border border-indigo-500/30 shadow-lg shadow-indigo-500/10">
+              <div className="p-5 rounded-2xl bg-white dark:bg-[#0d111e] border border-brand-accent/30 shadow-lg shadow-brand-primary/10">
                 <ComposePanel
                   item={composeItem.item}
                   type={composeItem.type}
@@ -571,7 +571,7 @@ export default function BriefingDetailPage({ params }: { params: Promise<{ id: s
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-slate-50 dark:bg-[#070b17] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
+        <Loader2 className="w-8 h-8 text-brand-accent animate-spin" />
       </div>
     }>
       <BriefingDetailContent id={unwrappedParams.id} />

@@ -21,7 +21,7 @@ export function FinalCta() {
         </Reveal>
         <Reveal delay={0.08}>
           <p className="mx-auto mt-5 max-w-lg text-base text-white/70 sm:text-lg">
-            Connect Gmail, WhatsApp, and Slack in minutes, and get your first daily brief right after.
+            Connect Gmail, Slack, Teams, Telegram, WhatsApp, or Notion in minutes, and get your first daily brief right after.
           </p>
         </Reveal>
         <Reveal delay={0.16}>
