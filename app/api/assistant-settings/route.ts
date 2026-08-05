@@ -74,10 +74,17 @@ export async function POST(req: NextRequest) {
 
     const prefs = sanitizeUserPreferences({ ...current, ...settings });
 
+    const loopOverdueDays = (() => {
+      const n = Number(settings.loop_overdue_days ?? current.loop_overdue_days ?? 3);
+      if (Number.isFinite(n) && n >= 1 && n <= 30) return Math.floor(n);
+      return 3;
+    })();
+
     // Advanced tone fields are never written here — only /api/tone/sources.
     const patch = {
       ...current,
       ...prefs,
+      loop_overdue_days: loopOverdueDays,
       responseTone: settings.responseTone || current.responseTone || "friendly",
       autoDraftReplies:
         typeof settings.autoDraftReplies === "boolean"

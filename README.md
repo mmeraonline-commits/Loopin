@@ -48,6 +48,7 @@ trigger/
   briefing.ts                      Scheduled briefing generation jobs.
 db/
   alerts.sql                       Alert schema and database setup SQL.
+  loop-and-ranked-tasks.sql        VIP contacts, AI-ranked tasks, The Loop commitments.
 ```
 
 ## Setup
@@ -97,7 +98,7 @@ SENT_DM_TEMPLATE_ID=your_sentdm_template_id
 - For Notion: create a public integration at notion.so/my-integrations, set redirect `{APP_URL}/auth/notion-callback`, and add `NOTION_CLIENT_ID` / `NOTION_CLIENT_SECRET`. After connect, share pages/databases with the integration.
 4. Prepare the database.
 
-- Apply the SQL in `db/alerts.sql` and `db/admin.sql` (and `db/waitlist.sql` if needed) to the InsForge project.
+- Apply the SQL in `db/alerts.sql`, `db/admin.sql`, and `db/loop-and-ranked-tasks.sql` (and `db/waitlist.sql` if needed) to the InsForge project.
 - Make sure the `users`, `alerts`, `alert_rules`, `briefing_schedules`, and `generated_briefings` tables exist before using dashboard workflows.
 - Set `ADMIN_EMAILS` / `NEXT_PUBLIC_ADMIN_EMAILS` to unlock the `/admin` console.
 - Keep secrets in `.env.local` and InsForge project config; do not hardcode private keys.
@@ -131,7 +132,9 @@ Dashboard briefs use `app/api/dashboard-brief/route.ts`. Briefs are cached in th
 
 Alerts use `lib/alert-auto-generation.ts`, `app/api/alerts/*`, and `trigger/alerts.ts`. The background job checks active alert rules, fetches connected app activity, deduplicates alerts with a `dedupe_key`, saves new alerts, and publishes realtime updates through InsForge.
 
-Scheduled briefings use `trigger/briefing.ts`. The cron task finds due briefing schedules, advances `next_run_at`, fetches connected communication data, generates a Gemini briefing when possible, and stores the result in `generated_briefings`.
+Scheduled briefings use `trigger/briefing.ts`. The cron task finds due briefing schedules, advances `next_run_at`, fetches connected communication data, generates a Gemini briefing when possible, stores the result in `generated_briefings`, then runs a single batched Gemini pass for AI-ranked tasks + The Loop commitment detection (no duplicate integration fetches).
+
+The Loop (waiting-on-others) and VIP contacts live in `db/loop-and-ranked-tasks.sql`, `lib/loop-and-ranking.ts`, `/api/the-loop`, `/api/vip-contacts`, `/api/ranked-tasks`, and the dashboard **The Loop** tab / Settings VIP section.
 
 Phone auth uses `app/api/phone-auth/send-otp/route.ts`, `app/api/phone-auth/verify-otp/route.ts`, and `lib/otp-store.ts`. OTPs are stored in memory for local development and consumed after one successful verification. For production, replace the in-memory store with Redis or a database-backed TTL table.
 

@@ -84,7 +84,10 @@ import {
 import Link from "next/link";
 import { RedeemCodeForm } from "@/components/redeem-code-form";
 import { ToneTrainingSection } from "@/components/settings/tone-training-section";
+import { VipContactsSection } from "@/components/settings/vip-contacts-section";
 import { FieldLabel, MultiChoiceSetting, SettingsSection, ToggleSetting } from "@/components/settings/settings-ui";
+import { TheLoopPanel } from "@/components/loop/the-loop-panel";
+import { RankedTasksList } from "@/components/loop/ranked-tasks-list";
 import {
   PLAN_ORDER,
   PLANS,
@@ -173,6 +176,8 @@ function DashboardContent() {
       );
     case "follow-ups":
       return <AlertsPanel title="Follow-Ups Tracker" subtitle="Manage scheduled reminders and active follow-up tasks." />;
+    case "the-loop":
+      return <TheLoopPanel userId={user?.id} />;
     case "integrations":
       return <IntegrationsPanel />;
     case "alerts":
@@ -468,9 +473,9 @@ function DashboardOverviewPanel({ user }: { user: any }) {
           </div>
         </div>
 
-        {/* Follow-Ups Card */}
+        {/* Follow-Ups Card → The Loop */}
         <div
-          onClick={() => router.push("/dashboard?tab=alerts")}
+          onClick={() => router.push("/dashboard?tab=the-loop")}
           className="glass-premium p-6 rounded-3xl border border-black/[0.05] dark:border-white/5 hover:border-black/10 dark:hover:border-white/10 flex items-center justify-between transition-all duration-300 cursor-pointer group hover:scale-[1.01] hover:shadow-lg shadow-sm"
         >
           <div className="flex items-center space-x-4">
@@ -478,12 +483,12 @@ function DashboardOverviewPanel({ user }: { user: any }) {
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Follow-Ups</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">The Loop</p>
               <h3 className="text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
                 {loading ? <span className="w-6 h-7 bg-black/5 dark:bg-white/10 rounded animate-pulse inline-block" /> : stats.followUpCount}
               </h3>
               <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold mt-1">
-                {stats.followUpCount || 3} due today
+                Waiting on others
               </p>
             </div>
           </div>
@@ -785,6 +790,11 @@ function DashboardOverviewPanel({ user }: { user: any }) {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* AI-ranked task list from latest briefing pipeline run */}
+      <div className="glass-premium p-6 rounded-3xl border border-black/[0.05] dark:border-white/5 shadow-sm mt-6">
+        <RankedTasksList userId={user?.id} limit={8} />
       </div>
 
       {/* Gmail native drafts — Loopin auto-drafts waiting in the user's Gmail Drafts folder */}
@@ -5893,6 +5903,8 @@ function SettingsPanel() {
           </SettingsSection>
 
           <ToneTrainingSection userId={user?.id} planId={user?.plan} />
+
+          <VipContactsSection userId={user?.id} />
 
           <SettingsSection
             icon={Newspaper}

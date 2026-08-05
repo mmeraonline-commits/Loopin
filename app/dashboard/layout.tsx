@@ -22,6 +22,7 @@ import {
   Zap,
   Inbox,
   LockKeyhole,
+  Timer,
 } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { OnboardingGuideBanner } from "@/components/onboarding-guide";
@@ -73,6 +74,14 @@ const mainNavItems: NavItem[] = [
     icon: Inbox,
     iconBg: "bg-teal-100 dark:bg-teal-900/30",
     iconColor: "text-teal-700 dark:text-teal-300",
+  },
+  {
+    name: "The Loop",
+    tabKey: "the-loop",
+    href: "/dashboard?tab=the-loop",
+    icon: Timer,
+    iconBg: "bg-amber-100 dark:bg-amber-900/30",
+    iconColor: "text-amber-700 dark:text-amber-300",
   },
   {
     name: "Integrations",

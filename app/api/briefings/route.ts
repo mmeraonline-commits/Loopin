@@ -5,6 +5,8 @@ import { format } from "date-fns";
 import { trackFeatureUsage } from "@/lib/track-feature-usage";
 import { loadUserPreferences, deliverBriefingToChannels } from "@/lib/briefing-delivery";
 import { detailLevelGuide } from "@/lib/assistant-preferences";
+import { runBriefingRankingAndLoop } from "@/lib/loop-and-ranking";
+import { GEMINI_MODEL } from "@/lib/gemini";
 
 export async function GET(req: NextRequest) {
   try {
@@ -87,7 +89,17 @@ export async function POST(req: NextRequest) {
     let scheduleName = `Daily Briefing — ${format(new Date(), "MMM d, yyyy")}`;
     let scheduleDesc = "Your daily communication digest and action items summary.";
     let categories = ["email", "messages", "calendar", "mentions", "tasks", "follow_ups"];
-    let apps = ["gmail", "whatsapp", "telegram", "slack", "outlook", "google_calendar", "notion"];
+    let apps = [
+      "gmail",
+      "whatsapp",
+      "telegram",
+      "slack",
+      "outlook",
+      "google_calendar",
+      "notion",
+      "discord",
+      "teams",
+    ];
 
     // 1. Load custom schedule config if provided
     if (scheduleId) {
@@ -101,7 +113,9 @@ export async function POST(req: NextRequest) {
         scheduleName = schedule.name;
         scheduleDesc = schedule.description || scheduleDesc;
         categories = schedule.categories?.length ? schedule.categories : categories;
-        apps = schedule.apps?.length ? schedule.apps : apps;
+        // Always include discord/teams for ranking + The Loop when connected
+        const scheduleApps = schedule.apps?.length ? schedule.apps : apps;
+        apps = [...new Set([...scheduleApps, "discord", "teams"])];
       }
     }
 
@@ -121,12 +135,16 @@ export async function POST(req: NextRequest) {
     const hasGoogleCalendar =
       !!integrations.google_calendar?.connected && !integrations.google_calendar?.isSimulated;
     const hasNotion = !!integrations.notion?.connected;
+    const hasDiscord = !!integrations.discord?.connected && !integrations.discord?.isSimulated;
+    const hasTeams = !!integrations.teams?.connected && !integrations.teams?.isSimulated;
 
     let gmailMessages: any[] = [];
     let whatsappMessages: any[] = [];
     let telegramMessages: any[] = [];
     let slackMessages: any[] = [];
     let outlookMessages: any[] = [];
+    let discordMessages: any[] = [];
+    let teamsMessages: any[] = [];
     let calendarEvents: any[] = [];
     let notionPages: any[] = [];
     let connectedAppsUsed: string[] = [];
@@ -336,15 +354,95 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    if (apps.includes("discord") && hasDiscord) {
+      try {
+        const discordRes = await fetch(`${origin}/api/discord-mcp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            method: "discord_get_recent_messages",
+            userId,
+          }),
+        });
+        if (discordRes.ok) {
+          const resJson = await discordRes.json();
+          const text = resJson.result?.content?.[0]?.text;
+          if (text) {
+            discordMessages = JSON.parse(text).messages || [];
+            if (discordMessages.length > 0) connectedAppsUsed.push("Discord");
+          }
+        }
+        console.log(`[Briefings] Fetched ${discordMessages.length} Discord messages`);
+      } catch (e) {
+        console.error("[Briefings] Discord fetch failed:", e);
+      }
+    }
+
+    if (apps.includes("teams") && hasTeams) {
+      try {
+        const teamsRes = await fetch(`${origin}/api/teams-mcp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            method: "teams_get_recent_messages",
+            userId,
+          }),
+        });
+        if (teamsRes.ok) {
+          const resJson = await teamsRes.json();
+          const text = resJson.result?.content?.[0]?.text;
+          if (text) {
+            teamsMessages = JSON.parse(text).messages || [];
+            if (teamsMessages.length > 0) connectedAppsUsed.push("Teams");
+          }
+        }
+        console.log(`[Briefings] Fetched ${teamsMessages.length} Teams messages`);
+      } catch (e) {
+        console.error("[Briefings] Teams fetch failed:", e);
+      }
+    }
+
     const hasAnyData =
       gmailMessages.length > 0 ||
       whatsappMessages.length > 0 ||
       telegramMessages.length > 0 ||
       slackMessages.length > 0 ||
       outlookMessages.length > 0 ||
+      discordMessages.length > 0 ||
+      teamsMessages.length > 0 ||
       calendarEvents.length > 0 ||
       notionPages.length > 0;
     const geminiApiKey = process.env.GEMINI_API_KEY;
+
+    const rankingPayload = {
+      gmail: gmailMessages,
+      outlook: outlookMessages,
+      slack: slackMessages,
+      discord: discordMessages,
+      telegram: telegramMessages,
+      whatsapp: whatsappMessages,
+      teams: teamsMessages,
+      notion: notionPages,
+      calendar: calendarEvents,
+    };
+
+    async function runRankingLoop(briefingId?: string | null) {
+      try {
+        const result = await runBriefingRankingAndLoop({
+          userId,
+          briefingId,
+          displayName: prefs.displayName,
+          messages: rankingPayload,
+        });
+        console.log(
+          `[Briefings] Ranking/Loop: ${result.rankedCount} tasks, ${result.commitmentCount} new commitments`
+        );
+        return result;
+      } catch (err) {
+        console.error("[Briefings] Ranking/Loop failed:", err);
+        return { rankedCount: 0, commitmentCount: 0 };
+      }
+    }
 
     // 5. Generate with Gemini using real data
     if (geminiApiKey && hasAnyData) {
@@ -413,7 +511,7 @@ RULES:
 - Return valid JSON only`;
 
         const response = await ai.models.generateContent({
-          model: "gemini-3.1-flash-lite",
+          model: GEMINI_MODEL,
           contents: prompt,
           config: { responseMimeType: "application/json" }
         });
@@ -437,6 +535,10 @@ RULES:
           if (error) return NextResponse.json({ error: error.message }, { status: 500 });
           console.log(`[Briefings] AI briefing generated and saved: ${parsed.title}`);
           void trackFeatureUsage({ userId, feature: "briefing", action: "generate" });
+
+          // Reuse already-fetched messages — do not re-fetch integrations
+          const ranking = await runRankingLoop(data?.id);
+
           let delivery: Record<string, unknown> | null = null;
           if (data?.id) {
             // Must await on Cloudflare — void/background work is dropped after the response.
@@ -457,7 +559,7 @@ RULES:
               };
             }
           }
-          return NextResponse.json({ ...data, delivery });
+          return NextResponse.json({ ...data, delivery, ranking });
         }
       } catch (aiError: any) {
         console.error("[Briefings] Gemini generation failed:", aiError.message);
@@ -512,6 +614,24 @@ RULES:
         snippet: msg.text || "",
         time: msg.timestamp ? format(new Date(msg.timestamp), "h:mm a") : "",
         body: msg.text || ""
+      })),
+      ...discordMessages.map((msg: any, i: number) => ({
+        id: msg.id || `discord_${i}`,
+        app: "discord",
+        from: msg.author || msg.from || "Unknown",
+        snippet: msg.content || msg.body || "",
+        time: msg.timestamp ? format(new Date(msg.timestamp), "h:mm a") : "",
+        body: msg.content || msg.body || "",
+      })),
+      ...teamsMessages.map((msg: any, i: number) => ({
+        id: msg.id || `teams_${i}`,
+        app: "teams",
+        from: msg.from || msg.sender || "Unknown",
+        snippet: msg.body || msg.text || "",
+        time: msg.timestamp || msg.createdDateTime
+          ? format(new Date(msg.timestamp || msg.createdDateTime), "h:mm a")
+          : "",
+        body: msg.body || msg.text || "",
       })),
     ];
 
@@ -568,6 +688,7 @@ RULES:
 
     if (dbError) return NextResponse.json({ error: dbError.message }, { status: 500 });
     void trackFeatureUsage({ userId, feature: "briefing", action: "generate" });
+    const ranking = await runRankingLoop(dbData?.id);
     let delivery: Record<string, unknown> | null = null;
     if (dbData?.id) {
       try {
@@ -587,7 +708,7 @@ RULES:
         };
       }
     }
-    return NextResponse.json({ ...dbData, delivery });
+    return NextResponse.json({ ...dbData, delivery, ranking });
 
   } catch (err: any) {
     console.error("Error in POST /api/briefings:", err);
