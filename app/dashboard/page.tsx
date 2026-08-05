@@ -2511,6 +2511,7 @@ interface Platform {
   bg: string;
   borderGlow: string;
   badgeBg: string;
+  beta?: boolean;
 }
 
 const PLATFORMS: Platform[] = [
@@ -2522,7 +2523,8 @@ const PLATFORMS: Platform[] = [
     color: "text-red-400",
     bg: "from-red-500/10 via-transparent to-red-500/5",
     borderGlow: "group-hover:border-red-500/30",
-    badgeBg: "bg-red-500/10 border-red-500/20 text-red-400"
+    badgeBg: "bg-red-500/10 border-red-500/20 text-red-400",
+    beta: true,
   },
   {
     id: "whatsapp",
@@ -2592,7 +2594,8 @@ const PLATFORMS: Platform[] = [
     color: "text-blue-500",
     bg: "from-blue-600/10 via-transparent to-blue-600/5",
     borderGlow: "group-hover:border-blue-600/30",
-    badgeBg: "bg-blue-600/10 border-blue-600/20 text-blue-400"
+    badgeBg: "bg-blue-600/10 border-blue-600/20 text-blue-400",
+    beta: true,
   },
   {
     id: "telegram",
@@ -2602,7 +2605,8 @@ const PLATFORMS: Platform[] = [
     color: "text-sky-400",
     bg: "from-sky-500/10 via-transparent to-sky-500/5",
     borderGlow: "group-hover:border-sky-500/30",
-    badgeBg: "bg-sky-500/10 border-sky-500/20 text-sky-400"
+    badgeBg: "bg-sky-500/10 border-sky-500/20 text-sky-400",
+    beta: true,
   },
   {
     id: "google_calendar",
@@ -2734,6 +2738,9 @@ function IntegrationsPanel() {
 
   // Simulated Fallback Error Modal
   const [showGmailSetupErrorModal, setShowGmailSetupErrorModal] = useState(false);
+
+  // Beta connect confirmation (gmail / telegram / linkedin)
+  const [betaConnectPlatform, setBetaConnectPlatform] = useState<Platform | null>(null);
 
   // WhatsApp Connection States
   const [showWhatsAppConnectModal, setShowWhatsAppConnectModal] = useState(false);
@@ -3458,7 +3465,14 @@ function IntegrationsPanel() {
                     <Globe className="w-8 h-8 text-slate-400 light:text-slate-500" />
                   )}
                 </div>
-                <h3 className="text-base font-bold text-white light:text-slate-900 tracking-wide">{platform.name}</h3>
+                <div className="flex items-center justify-center gap-2">
+                  <h3 className="text-base font-bold text-white light:text-slate-900 tracking-wide">{platform.name}</h3>
+                  {platform.beta && (
+                    <span className="px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase rounded-md bg-amber-500/10 border border-amber-500/25 text-amber-400">
+                      Beta
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-slate-400 light:text-slate-600 mt-2 px-4 line-clamp-2 min-h-[32px] leading-relaxed">
                   {!planAllowed
                     ? `Not included in ${getPlan(userPlanId).name}. Redeem a code to unlock.`
@@ -3478,7 +3492,13 @@ function IntegrationsPanel() {
                   </button>
                 ) : !isConnected ? (
                   <button
-                    onClick={() => handleToggleConnect(platform.id)}
+                    onClick={() => {
+                      if (platform.beta) {
+                        setBetaConnectPlatform(platform);
+                      } else {
+                        handleToggleConnect(platform.id);
+                      }
+                    }}
                     disabled={isUpdating}
                     className="w-full py-2.5 px-4 bg-brand-primary hover:bg-brand-primary disabled:bg-brand-primary/40 disabled:text-slate-500 active:bg-brand-secondary text-white rounded-xl text-xs font-bold transition shadow-lg shadow-brand-primary/20 flex items-center justify-center"
                   >
@@ -3786,6 +3806,58 @@ function IntegrationsPanel() {
               </div>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* BETA INTEGRATION CONFIRMATION MODAL */}
+      {betaConnectPlatform && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-[#090d1a] light:bg-white border border-white/10 light:border-slate-200 rounded-3xl w-full max-w-md p-6 space-y-5 shadow-2xl relative">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-white/[0.02] border border-white/5 light:border-slate-200 flex items-center justify-center p-2 flex-shrink-0">
+                {betaConnectPlatform.logo ? (
+                  <img src={betaConnectPlatform.logo} alt={betaConnectPlatform.name} className="w-full h-full object-contain" />
+                ) : (
+                  <Globe className="w-5 h-5 text-slate-400" />
+                )}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold text-white light:text-slate-900 tracking-wide">
+                    Connect {betaConnectPlatform.name}
+                  </h3>
+                  <span className="px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase rounded-md bg-amber-500/10 border border-amber-500/25 text-amber-400">
+                    Beta
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-300 light:text-slate-700 leading-relaxed">
+              This integration is in beta. Access may be invite-only, limited, or unstable while we finish testing.
+            </p>
+
+            <div className="flex space-x-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setBetaConnectPlatform(null)}
+                className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/5 light:border-slate-200 text-slate-300 light:text-slate-700 rounded-xl text-xs font-bold transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const id = betaConnectPlatform.id;
+                  setBetaConnectPlatform(null);
+                  handleToggleConnect(id);
+                }}
+                className="flex-1 py-2.5 bg-brand-primary hover:bg-brand-primary text-white rounded-xl text-xs font-bold transition shadow-lg shadow-brand-primary/20"
+              >
+                Continue
+              </button>
+            </div>
           </div>
         </div>
       )}
